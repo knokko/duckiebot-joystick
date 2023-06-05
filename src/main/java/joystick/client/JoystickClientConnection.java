@@ -58,6 +58,7 @@ public class JoystickClientConnection {
                     if (lastCommandLeft != commandLeft || lastCommandRight != commandRight) {
                         output.writeFloat((float) commandLeft);
                         output.writeFloat((float) commandRight);
+                        output.flush();
                         lastCommandLeft = commandLeft;
                         lastCommandRight = commandRight;
                         didSomething = true;
