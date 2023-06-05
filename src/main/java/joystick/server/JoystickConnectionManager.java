@@ -61,7 +61,6 @@ public class JoystickConnectionManager {
         new Thread(() -> {
             try (ServerSocket serverSocket = new ServerSocket()) {
                 serverSocket.bind(new InetSocketAddress(21002));
-                System.out.println("listening on " + serverSocket.getInetAddress());
 
                 while (true) {
                     Socket newSocket = serverSocket.accept();
