@@ -1,18 +1,31 @@
 package joystick.client;
 
+import controller.Turner;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.*;
+import java.util.function.Supplier;
 
 import static java.lang.Math.abs;
 
-public class JoystickBoard extends JPanel implements KeyListener {
+public class JoystickBoard extends JPanel implements KeyListener, MouseListener, MouseMotionListener {
+
+    private final Supplier<Insets> rootInsets;
+
+    private double joystickX, joystickY;
+    private final Turner turner = new Turner((x, y) -> {
+        joystickX = x;
+        joystickY = y;
+    }, () -> joystickX, () -> joystickY);
 
     private int lastLeftEncoder, lastRightEncoder, currentLeftEncoder, currentRightEncoder;
     private double leftMotor, rightMotor;
 
-    private double joystickX, joystickY;
+
+    public JoystickBoard(Supplier<Insets> rootInsets) {
+        this.rootInsets = rootInsets;
+    }
 
     private double getCommand(double unboundedValue) {
         if (unboundedValue < -1.0) return -1.0;
@@ -20,11 +33,11 @@ public class JoystickBoard extends JPanel implements KeyListener {
     }
 
     public double getLeftCommand() {
-        return getCommand(joystickY - joystickX);
+        return getCommand(joystickY + joystickX);
     }
 
     public double getRightCommand() {
-        return getCommand(joystickY + joystickX);
+        return getCommand(joystickY - joystickX);
     }
 
     public void processLeftEncoder(int data) {
@@ -138,6 +151,13 @@ public class JoystickBoard extends JPanel implements KeyListener {
             joystickY = 0.0;
         }
 
+        if (keyEvent.getKeyCode() == KeyEvent.VK_L) {
+            turner.turnLeft();
+        }
+        if (keyEvent.getKeyCode() == KeyEvent.VK_R) {
+            turner.turnRight();
+        }
+
         joystickX = Math.max(joystickX, -1.0);
         joystickX = Math.min(joystickX, 1.0);
         joystickY = Math.max(joystickY, -1.0);
@@ -149,4 +169,48 @@ public class JoystickBoard extends JPanel implements KeyListener {
 
     @Override
     public void keyReleased(KeyEvent keyEvent) {}
+
+    @Override
+    public void mouseDragged(MouseEvent mouseEvent) {
+        int x = mouseEvent.getX();
+        int y = mouseEvent.getY() - rootInsets.get().top;
+
+        if (x > 400 && y > 50 && x < 800 && y < 450) {
+            double jx = (x - 600.0) / 200.0;
+            double jy = (250.0 - y) / 200.0;
+            if (mouseEvent.isShiftDown()) {
+                if (abs(jx) > abs(jy)) jy = 0;
+                else jx = 0;
+            }
+
+            joystickX = jx;
+            joystickY = jy;
+        }
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent mouseEvent) {
+        joystickX = 0;
+        joystickY = 0;
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent mouseEvent) {}
+
+    @Override
+    public void mousePressed(MouseEvent mouseEvent) {
+        mouseDragged(mouseEvent);
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent mouseEvent) {
+        joystickX = 0;
+        joystickY = 0;
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent mouseEvent) {}
+
+    @Override
+    public void mouseExited(MouseEvent mouseEvent) {}
 }
