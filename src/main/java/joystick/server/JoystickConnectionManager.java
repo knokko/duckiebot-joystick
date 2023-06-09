@@ -36,6 +36,10 @@ public class JoystickConnectionManager {
         broadcast((byte) 4, output -> output.writeFloat((float) data));
     }
 
+    public void broadcastTof(double data) {
+        broadcast((byte) 5, output -> output.writeFloat((float) data));
+    }
+
     private void broadcast(byte type, DataSource writeData) {
         synchronized (this) {
             sockets.removeIf(socket -> {

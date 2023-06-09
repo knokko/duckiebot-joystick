@@ -20,7 +20,8 @@ public class JoystickServer {
         } else {
             var wheelWatcher = new JoystickWheelWatcher(
                     connectionManager::broadcastLeftWheelEncoder, connectionManager::broadcastLeftWheelMotor,
-                    connectionManager::broadcastRightWheelEncoder, connectionManager::broadcastRightWheelMotor
+                    connectionManager::broadcastRightWheelEncoder, connectionManager::broadcastRightWheelMotor,
+                    connectionManager::broadcastTof
             );
             wheelWatcher.start();
         }
