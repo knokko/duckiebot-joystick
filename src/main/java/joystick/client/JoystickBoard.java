@@ -1,6 +1,6 @@
 package joystick.client;
 
-import controller.Turner;
+import state.DuckieState;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,19 +12,16 @@ import static java.lang.Math.abs;
 public class JoystickBoard extends JPanel implements KeyListener, MouseListener, MouseMotionListener {
 
     private final Supplier<Insets> rootInsets;
+    private final DuckieState duckieState;
 
     private double joystickX, joystickY;
-    private final Turner turner = new Turner((x, y) -> {
-        joystickX = x;
-        joystickY = y;
-    }, () -> joystickX, () -> joystickY);
 
-    private int lastLeftEncoder, lastRightEncoder, currentLeftEncoder, currentRightEncoder;
+    private int lastLeftEncoder, lastRightEncoder;
     private double leftMotor, rightMotor;
 
-
-    public JoystickBoard(Supplier<Insets> rootInsets) {
+    public JoystickBoard(Supplier<Insets> rootInsets, DuckieState duckieState) {
         this.rootInsets = rootInsets;
+        this.duckieState = duckieState;
     }
 
     private double getCommand(double unboundedValue) {
@@ -40,22 +37,8 @@ public class JoystickBoard extends JPanel implements KeyListener, MouseListener,
         return getCommand(joystickY - joystickX);
     }
 
-    public void processLeftEncoder(int data) {
-        SwingUtilities.invokeLater(() -> {
-            this.lastLeftEncoder = currentLeftEncoder;
-            this.currentLeftEncoder = data;
-        });
-    }
-
     public void processLeftMotor(double data) {
         SwingUtilities.invokeLater(() -> this.leftMotor = data);
-    }
-
-    public void processRightEncoder(int data) {
-        SwingUtilities.invokeLater(() -> {
-            this.lastRightEncoder = currentRightEncoder;
-            this.currentRightEncoder = data;
-        });
     }
 
     public void processRightMotor(double data) {
@@ -64,8 +47,8 @@ public class JoystickBoard extends JPanel implements KeyListener, MouseListener,
 
     @Override
     public void paint(Graphics graphics) {
-        int deltaLeft = 50 * (currentLeftEncoder - lastLeftEncoder);
-        int deltaRight = 50 * (currentRightEncoder - lastRightEncoder);
+        int deltaLeft = 50 * (duckieState.leftWheelEncoder - lastLeftEncoder);
+        int deltaRight = 50 * (duckieState.rightWheelEncoder - lastRightEncoder);
         int deltaLeftMotor = (int) (300f * leftMotor);
         int deltaRightMotor = (int) (300f * rightMotor);
         graphics.setColor(Color.WHITE);
@@ -104,6 +87,10 @@ public class JoystickBoard extends JPanel implements KeyListener, MouseListener,
             graphics.fillRect(300, baseY, 80, -deltaRightMotor);
         }
 
+        graphics.setColor(Color.GREEN);
+        int tofLength = (int) (400 * duckieState.tof);
+        graphics.fillRect(820, 50, 50, tofLength);
+
         graphics.setColor(Color.LIGHT_GRAY);
         graphics.fillRect(400, 50, 400, 400);
         graphics.setColor(Color.BLACK);
@@ -125,6 +112,9 @@ public class JoystickBoard extends JPanel implements KeyListener, MouseListener,
                 250 - (int) (200 * joystickY) - joystickRadius,
                 2 * joystickRadius, 2 * joystickRadius
         );
+
+        lastLeftEncoder = duckieState.leftWheelEncoder;
+        lastRightEncoder = duckieState.rightWheelEncoder;
 
         new Thread(() -> {
             try {
@@ -149,13 +139,6 @@ public class JoystickBoard extends JPanel implements KeyListener, MouseListener,
         if (keyEvent.getKeyCode() == KeyEvent.VK_SPACE) {
             joystickX = 0.0;
             joystickY = 0.0;
-        }
-
-        if (keyEvent.getKeyCode() == KeyEvent.VK_L) {
-            turner.turnLeft();
-        }
-        if (keyEvent.getKeyCode() == KeyEvent.VK_R) {
-            turner.turnRight();
         }
 
         joystickX = Math.max(joystickX, -1.0);

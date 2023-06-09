@@ -1,5 +1,7 @@
 package joystick.client;
 
+import state.DuckieState;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -7,25 +9,22 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
-import java.util.function.IntConsumer;
 
 public class JoystickClientConnection {
 
     private final String server;
-    private final IntConsumer leftEncoderConsumer, rightEncoderConsumer;
+    private final DuckieState duckieState;
     private final DoubleConsumer leftMotorConsumer, rightMotorConsumer;
     private final DoubleSupplier leftMotorControl, rightMotorControl;
 
     public JoystickClientConnection(
-            String server,
-            IntConsumer leftEncoderConsumer, DoubleConsumer leftMotorConsumer,
-            IntConsumer rightEncoderConsumer, DoubleConsumer rightMotorConsumer,
+            String server, DuckieState duckieState,
+            DoubleConsumer leftMotorConsumer, DoubleConsumer rightMotorConsumer,
             DoubleSupplier leftMotorControl, DoubleSupplier rightMotorControl
     ) {
         this.server = server;
-        this.leftEncoderConsumer = leftEncoderConsumer;
+        this.duckieState = duckieState;
         this.leftMotorConsumer = leftMotorConsumer;
-        this.rightEncoderConsumer = rightEncoderConsumer;
         this.rightMotorConsumer = rightMotorConsumer;
         this.leftMotorControl = leftMotorControl;
         this.rightMotorControl = rightMotorControl;
@@ -45,10 +44,11 @@ public class JoystickClientConnection {
                     boolean didSomething = false;
                     while (input.available() > 0) {
                         byte type = input.readByte();
-                        if (type == 1) leftEncoderConsumer.accept(input.readInt());
+                        if (type == 1) duckieState.leftWheelEncoder = input.readInt();
                         else if (type == 2) leftMotorConsumer.accept(input.readFloat());
-                        else if (type == 3) rightEncoderConsumer.accept(input.readInt());
-                        else rightMotorConsumer.accept(input.readFloat());
+                        else if (type == 3) duckieState.rightWheelEncoder = input.readInt();
+                        else if (type == 4) rightMotorConsumer.accept(input.readFloat());
+                        else duckieState.tof = input.readFloat();
                         didSomething = true;
                     }
 
