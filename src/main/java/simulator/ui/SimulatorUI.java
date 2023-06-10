@@ -102,8 +102,13 @@ public class SimulatorUI {
                 long lastSpeedTime = System.nanoTime();
                 long lastRouteTime = System.nanoTime();
 
+                long startTime = System.currentTimeMillis();
                 while (true) {
-                    sleep(1);
+                    while (true) {
+                        long currentTime = System.currentTimeMillis();
+                        if (updateCounter < (currentTime - startTime)) break;
+                        sleep(1);
+                    }
                     long currentTime = System.nanoTime();
                     double deltaUpdateTime = (currentTime - lastUpdateTime) / 1_000_000_000.0;
                     simulator.update(deltaUpdateTime);
