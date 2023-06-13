@@ -59,7 +59,9 @@ public class SimulatorUI {
             );
             connection.start();
         } else {
-            var simulator = new Simulator(Terrain.SIMPLE_SLOW);
+            var simulator = new Simulator(
+                    Terrain.SIMPLE_SLOW, 0.0, 0.0, 0.1, 0.1
+            );
             estimations = simulator.estimations;
             controls = simulator.controls;
             trackedState = simulator.trackedState;
