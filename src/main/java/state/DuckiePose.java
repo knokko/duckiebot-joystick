@@ -5,7 +5,7 @@ public class DuckiePose {
     /**
      * x-coordinate relative to the origin (starting point), in meters
      */
-    public volatile double x = 0.16;
+    public volatile double x = 0.12;
     /**
      * y-coordinate relative to the origin (starting point), in meters
      */

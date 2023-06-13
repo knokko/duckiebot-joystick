@@ -1,6 +1,7 @@
 package simulator.ui;
 
 import controller.desired.DesiredPose;
+import controller.estimation.DuckieEstimations;
 import simulator.Simulator;
 
 import javax.swing.*;
@@ -11,6 +12,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import static controller.util.DuckieWheels.DISTANCE_BETWEEN_WHEELS;
+import static controller.util.DuckieWheels.WHEEL_RADIUS;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 
@@ -18,11 +20,11 @@ public class SimulatorBoard extends JPanel {
 
     private static final int SCALE = 5;
 
-    private final Simulator simulator;
+    private final DuckieEstimations estimations;
     private final Queue<DesiredPose> route;
 
-    public SimulatorBoard(Simulator simulator, Queue<DesiredPose> route) {
-        this.simulator = simulator;
+    public SimulatorBoard(DuckieEstimations estimations, Queue<DesiredPose> route) {
+        this.estimations = estimations;
         this.route = new LinkedList<>(route);
     }
 
@@ -52,22 +54,22 @@ public class SimulatorBoard extends JPanel {
         graphics.drawLine(0, offsetY, getWidth(), offsetY);
         graphics.drawLine(offsetX, 0, offsetX, getHeight());
 
-        synchronized (simulator) {
-            double x = simulator.realPose.x;
-            double y = simulator.realPose.y;
-            double angle = simulator.realPose.angle * 2 * Math.PI;
+        synchronized (estimations) {
+            double x = estimations.x;
+            double y = estimations.y;
+            double angle = estimations.angle * 2 * Math.PI;
 
             double cosAngle = cos(angle);
             double sinAngle = sin(angle);
 
-            double xLeftFront = x + 0.04 * cosAngle - DISTANCE_BETWEEN_WHEELS * 0.5 * sinAngle;
-            double yLeftFront = y + 0.04 * sinAngle + DISTANCE_BETWEEN_WHEELS * 0.5 * cosAngle;
-            double xRightFront = x + 0.04 * cosAngle + DISTANCE_BETWEEN_WHEELS * 0.5 * sinAngle;
-            double yRightFront = y + 0.04 * sinAngle - DISTANCE_BETWEEN_WHEELS * 0.5 * cosAngle;
-            double xLeftBack = x - 0.16 * cosAngle - DISTANCE_BETWEEN_WHEELS * 0.5 * sinAngle;
-            double yLeftBack = y - 0.16 * sinAngle + DISTANCE_BETWEEN_WHEELS * 0.5 * cosAngle;
-            double xRightBack = x - 0.16 * cosAngle + DISTANCE_BETWEEN_WHEELS * 0.5 * sinAngle;
-            double yRightBack = y - 0.16 * sinAngle - DISTANCE_BETWEEN_WHEELS * 0.5 * cosAngle;
+            double xLeftFront = x + 0.07 * cosAngle - DISTANCE_BETWEEN_WHEELS * 0.5 * sinAngle;
+            double yLeftFront = y + 0.07 * sinAngle + DISTANCE_BETWEEN_WHEELS * 0.5 * cosAngle;
+            double xRightFront = x + 0.07 * cosAngle + DISTANCE_BETWEEN_WHEELS * 0.5 * sinAngle;
+            double yRightFront = y + 0.07 * sinAngle - DISTANCE_BETWEEN_WHEELS * 0.5 * cosAngle;
+            double xLeftBack = x - 0.12 * cosAngle - DISTANCE_BETWEEN_WHEELS * 0.5 * sinAngle;
+            double yLeftBack = y - 0.12 * sinAngle + DISTANCE_BETWEEN_WHEELS * 0.5 * cosAngle;
+            double xRightBack = x - 0.12 * cosAngle + DISTANCE_BETWEEN_WHEELS * 0.5 * sinAngle;
+            double yRightBack = y - 0.12 * sinAngle - DISTANCE_BETWEEN_WHEELS * 0.5 * cosAngle;
             double[] xCoordinates = { xLeftFront, xRightFront, xRightBack, xLeftBack };
             double[] yCoordinates = { yLeftFront, yRightFront, yRightBack, yLeftBack };
             int[] polygonXCoordinates = new int[xCoordinates.length];
@@ -77,7 +79,6 @@ public class SimulatorBoard extends JPanel {
                 polygonYCoordinates[index] = transformRealY(yCoordinates[index]);
             }
 
-            //System.out.println(xCoordinates[0] + " -> " + polygonXCoordinates[0]);
             graphics.setColor(Color.BLUE);
             graphics.drawPolygon(polygonXCoordinates, polygonYCoordinates, 4);
 
@@ -86,9 +87,9 @@ public class SimulatorBoard extends JPanel {
             double xRightWheel = x + DISTANCE_BETWEEN_WHEELS * 0.5 * sinAngle;
             double yRightWheel = y - DISTANCE_BETWEEN_WHEELS * 0.5 * cosAngle;
             graphics.setColor(Color.YELLOW);
-            int radius = 4 * SCALE;
-            graphics.fillOval(transformRealX(xLeftWheel) - radius / 2, transformRealY(yLeftWheel) - radius / 2, radius, radius);
-            graphics.fillOval(transformRealX(xRightWheel) - radius / 2, transformRealY(yRightWheel) - radius / 2, radius, radius);
+            int radius = (transformRealX(xLeftWheel + WHEEL_RADIUS) - transformRealX(xLeftWheel - WHEEL_RADIUS)) / 2;
+            graphics.fillOval(transformRealX(xLeftWheel) - radius, transformRealY(yLeftWheel) - radius, 2 * radius, 2 * radius);
+            graphics.fillOval(transformRealX(xRightWheel) - radius, transformRealY(yRightWheel) - radius, 2 * radius, 2 * radius);
         }
 
         graphics.setColor(Color.RED);
@@ -96,7 +97,7 @@ public class SimulatorBoard extends JPanel {
         for (var point : visitedPoints) {
             graphics.fillOval(transformRealX(point.x) - radius, transformRealY(point.y) - radius, 2 * radius, 2 * radius);
         }
-        var newPoint = new Point2D.Double(simulator.realPose.x, simulator.realPose.y);
+        var newPoint = new Point2D.Double(estimations.x, estimations.y);
         if (!visitedPoints.contains(newPoint)) visitedPoints.add(newPoint);
 
         graphics.setColor(Color.GREEN);
