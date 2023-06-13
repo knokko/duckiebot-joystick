@@ -1,8 +1,10 @@
 package controller;
 
+import controller.updater.ControllerFunction;
+
 import java.util.function.DoubleConsumer;
 
-public class AccelerationLimiter {
+public class AccelerationLimiter implements ControllerFunction {
 
     /**
      * The maximum acceleration, in units per second
@@ -21,6 +23,7 @@ public class AccelerationLimiter {
         this.currentControlInput = value;
     }
 
+    @Override
     public void update(double deltaTime) {
         double controlInput = this.currentControlInput;
         double controlDelta = controlInput - lastControlInput;

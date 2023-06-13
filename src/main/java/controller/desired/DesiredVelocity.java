@@ -11,4 +11,6 @@ public class DesiredVelocity {
      * The desired angle, in turns
      */
     public volatile double angle;
+
+    public volatile double turnTime = 1.0;
 }

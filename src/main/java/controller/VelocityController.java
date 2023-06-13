@@ -3,11 +3,12 @@ package controller;
 import controller.desired.DesiredVelocity;
 import controller.desired.DesiredWheelSpeed;
 import controller.estimation.DuckieEstimations;
+import controller.updater.ControllerFunction;
 
 import static controller.util.DuckieWheels.DISTANCE_BETWEEN_WHEELS;
 import static java.lang.Math.max;
 
-public class VelocityController {
+public class VelocityController implements ControllerFunction {
 
     private final DesiredVelocity desiredVelocity;
     private final DesiredWheelSpeed desiredWheelSpeed;
@@ -21,6 +22,7 @@ public class VelocityController {
         this.estimations = estimations;
     }
 
+    @Override
     public void update(double deltaTime) {
         double speedChangeInterval;
         if (Double.isNaN(estimations.leftSpeedChangeInterval) || Double.isNaN(estimations.rightSpeedChangeInterval)) speedChangeInterval = 0.3;
@@ -32,7 +34,8 @@ public class VelocityController {
         if (errorAngle > 0.5) errorAngle -= 1;
         if (errorAngle < -0.5) errorAngle += 1;
 
-        double turnTime = max(2 * (speedChangeInterval + deltaTime), 3.0 * errorAngle);
+        //double turnTime = max(2 * (speedChangeInterval + deltaTime), 3.0 * errorAngle);
+        double turnTime = desiredVelocity.turnTime;
         double extraDistanceRight = Math.PI * DISTANCE_BETWEEN_WHEELS * errorAngle;
         double angleCorrection = extraDistanceRight / turnTime;
 

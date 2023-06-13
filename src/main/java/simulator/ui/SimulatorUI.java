@@ -1,16 +1,19 @@
 package simulator.ui;
 
-import controller.AccelerationLimiter;
-import controller.RouteController;
+import controller.*;
 import controller.desired.DesiredPose;
 import controller.desired.DesiredVelocity;
-import controller.SpeedPIDController;
-import controller.VelocityController;
 import controller.desired.DesiredWheelSpeed;
+import controller.estimation.DuckieEstimations;
 import controller.estimation.PoseEstimator;
 import controller.estimation.SpeedEstimator;
+import controller.updater.ControllerFunction;
+import controller.updater.ControllerUpdater;
+import joystick.client.JoystickClientConnection;
 import simulator.Simulator;
 import simulator.Terrain;
+import state.DuckieControls;
+import state.DuckieState;
 
 import javax.swing.*;
 
@@ -36,124 +39,108 @@ public class SimulatorUI {
     }
 
     public static void main(String[] args) {
-        var simulator = new Simulator(Terrain.IDEAL);
+        boolean useDuckiebot = args.length > 0 && args[0].equals("duckie");
+        DuckieEstimations estimations;
+        DuckieControls controls;
+        DuckieState trackedState;
+        ControllerFunction updateFunction;
+
+        if (useDuckiebot) {
+            estimations = new DuckieEstimations();
+            controls = new DuckieControls();
+            trackedState = new DuckieState();
+            updateFunction = deltaTime -> {};
+
+            var connection = new JoystickClientConnection(
+                    "db4.local", trackedState,
+                    leftMotor -> trackedState.leftWheelControl = leftMotor,
+                    rightMotor -> trackedState.rightWheelControl = rightMotor,
+                    () -> controls.velLeft, () -> controls.velRight
+            );
+            connection.start();
+        } else {
+            var simulator = new Simulator(Terrain.SIMPLE_SLOW);
+            estimations = simulator.estimations;
+            controls = simulator.controls;
+            trackedState = simulator.trackedState;
+            updateFunction = simulator;
+        }
 
         double maxAcceleration = 1.0;
 
         var route = new LinkedList<DesiredPose>();
-        route.add(new DesiredPose(0.36, 0.1, 0));
-        route.add(new DesiredPose(0.56, 0.1, 0));
-        addLeftTurn(route, 2, 0, 0);
-        route.add(new DesiredPose(0.7, 0.56, 0));
-        addLeftTurn(route, 3, 2, 0.25);
-        route.add(new DesiredPose(0.24, 0.7, 0));
-        addLeftTurn(route, 1, 3, 0.5);
-        route.add(new DesiredPose(0.1, 0.04, 0));
-        System.out.println("route is " + route);
-
-        var board = new SimulatorBoard(simulator, route);
+        route.add(new DesiredPose(0.4, 0.1, 0));
+        route.add(new DesiredPose(0.6, 0.1, 0));
+        route.add(new DesiredPose(0.7, 0.2, 0.25));
+        route.add(new DesiredPose(0.7, 0.4, 0.25));
+        route.add(new DesiredPose(0.7, 0.6, 0.25));
+        route.add(new DesiredPose(0.6, 0.7, 0.5));
+        route.add(new DesiredPose(0.4, 0.7, 0.5));
+        route.add(new DesiredPose(0.2, 0.7, 0.5));
+        route.add(new DesiredPose(0.1, 0.6, 0.75));
+        route.add(new DesiredPose(0.1, 0.4, 0.75));
+        route.add(new DesiredPose(0.1, 0.2, 0.75));
+        route.add(new DesiredPose(0.1, 0.0, 0.75));
 
         var desiredVelocity = new DesiredVelocity();
-        desiredVelocity.angle = 0.125;
-        desiredVelocity.speed = 0.2;
         var desiredWheelSpeed = new DesiredWheelSpeed();
 
-        var poseEstimator = new PoseEstimator(simulator.trackedState, simulator.estimations);
+        var poseEstimator = new PoseEstimator(trackedState, estimations);
 
-        var routeController = new RouteController(route, desiredVelocity, simulator.estimations, simulator.controls, maxAcceleration);
-        var velocityController = new VelocityController(desiredVelocity, desiredWheelSpeed, simulator.estimations);
+        //var routeController = new RouteController(route, desiredVelocity, estimations, controls, maxAcceleration);
+        var routeController = new BezierController(route, desiredVelocity, estimations, controls, maxAcceleration);
+        var velocityController = new VelocityController(desiredVelocity, desiredWheelSpeed, estimations);
 
-        var leftAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> simulator.controls.velLeft = signal);
-        var rightAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> simulator.controls.velRight = signal);
+        var leftAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velLeft = signal);
+        var rightAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velRight = signal);
 
         var leftPidController = new SpeedPIDController(
-                0.9, 0.00, 0.3, () -> simulator.estimations.leftSpeed,
+                0.9, 0.00, 0.3, () -> estimations.leftSpeed,
                 () -> desiredWheelSpeed.leftSpeed, leftAccelerationLimiter::setControlInput,
-                () -> simulator.controls.velLeft
+                () -> controls.velLeft
         );
         var rightPidController = new SpeedPIDController(
-                0.9, 0.00, 0.3, () -> simulator.estimations.rightSpeed,
+                0.9, 0.00, 0.3, () -> estimations.rightSpeed,
                 () -> desiredWheelSpeed.rightSpeed, rightAccelerationLimiter::setControlInput,
-                () -> simulator.controls.velRight
+                () -> controls.velRight
         );
         var leftSpeedEstimator = new SpeedEstimator(
-                () -> simulator.trackedState.leftWheelEncoder, newSpeed -> simulator.estimations.leftSpeed = newSpeed,
-                () -> simulator.estimations.leftSpeedChangeInterval, newInterval -> simulator.estimations.leftSpeedChangeInterval = newInterval
+                () -> trackedState.leftWheelEncoder, newSpeed -> estimations.leftSpeed = newSpeed,
+                () -> estimations.leftSpeedChangeInterval, newInterval -> estimations.leftSpeedChangeInterval = newInterval
         );
         var rightSpeedEstimator = new SpeedEstimator(
-                () -> simulator.trackedState.rightWheelEncoder, newSpeed -> simulator.estimations.rightSpeed = newSpeed,
-                () -> simulator.estimations.rightSpeedChangeInterval, newInterval -> simulator.estimations.rightSpeedChangeInterval = newInterval
+                () -> trackedState.rightWheelEncoder, newSpeed -> estimations.rightSpeed = newSpeed,
+                () -> estimations.rightSpeedChangeInterval, newInterval -> estimations.rightSpeedChangeInterval = newInterval
         );
 
-        var frame = new JFrame();
-        frame.setSize(1200, 800);
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.add(board);
-        frame.setVisible(true);
+        var updater = new ControllerUpdater();
 
-        Thread updateThread = new Thread(() -> {
-            try {
-                long updateCounter = 0;
+        updater.addController(updateFunction, 1);
+        updater.addController(routeController, 50);
+        updater.addController(leftPidController, 70);
+        updater.addController(rightPidController, 70);
+        updater.addController(leftAccelerationLimiter, 10);
+        updater.addController(rightAccelerationLimiter, 10);
+        updater.addController(velocityController, 91);
+        updater.addController(leftSpeedEstimator, 30);
+        updater.addController(rightSpeedEstimator, 30);
+        updater.addController(poseEstimator, 30);
 
-                long lastUpdateTime = System.nanoTime();
-                long lastPidTime = System.nanoTime();
-                long lastVelocityTime = System.nanoTime();
-                long lastLimitTime = System.nanoTime();
-                long lastSpeedTime = System.nanoTime();
-                long lastRouteTime = System.nanoTime();
+        var monitorFrame = new JFrame();
+        monitorFrame.setSize(800, 500);
+        monitorFrame.setAutoRequestFocus(false);
+        monitorFrame.setLocation(1200, 200);
+        monitorFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        monitorFrame.add(new MonitorBoard(trackedState, controls, estimations));
+        monitorFrame.setVisible(true);
 
-                long startTime = System.currentTimeMillis();
-                while (true) {
-                    while (true) {
-                        long currentTime = System.currentTimeMillis();
-                        if (updateCounter < (currentTime - startTime)) break;
-                        sleep(1);
-                    }
-                    long currentTime = System.nanoTime();
-                    double deltaUpdateTime = (currentTime - lastUpdateTime) / 1_000_000_000.0;
-                    simulator.update(deltaUpdateTime);
-                    lastUpdateTime = currentTime;
+        var simulatorFrame = new JFrame();
+        simulatorFrame.setSize(1200, 800);
+        simulatorFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        simulatorFrame.add(new SimulatorBoard(estimations, route));
+        simulatorFrame.setVisible(true);
 
-                    updateCounter += 1;
-                    if (updateCounter == 5000) {
-                        desiredVelocity.angle = 0.5;
-                    }
-                    if (updateCounter % 50 == 0) {
-                        double deltaRouteTime = (currentTime - lastRouteTime) / 1_000_000_000.0;
-                        routeController.update(deltaRouteTime);
-                        System.out.printf("(x, y) = (%.2f, %.2f)\n", simulator.estimations.x, simulator.estimations.y);
-                        lastRouteTime = currentTime;
-                    }
-                    if (updateCounter % 70 == 0) {
-                        double deltaPidTime = (currentTime - lastPidTime) / 1_000_000_000.0;
-                        leftPidController.update(deltaPidTime);
-                        rightPidController.update(deltaPidTime);
-                        lastPidTime = currentTime;
-                    }
-                    if (updateCounter % 10 == 0) {
-                        double deltaLimitTime = (currentTime - lastLimitTime) / 1_000_000_000.0;
-                        leftAccelerationLimiter.update(deltaLimitTime);
-                        rightAccelerationLimiter.update(deltaLimitTime);
-                        lastLimitTime = currentTime;
-                    }
-                    if (updateCounter % 91 == 0) {
-                        double deltaVelocityTime = (currentTime - lastVelocityTime) / 1_000_000_000.0;
-                        velocityController.update(deltaVelocityTime);
-                        lastVelocityTime = currentTime;
-                    }
-                    if (updateCounter % 30 == 0) {
-                        double deltaSpeedTime = (currentTime - lastSpeedTime) / 1_000_000_000.0;
-                        leftSpeedEstimator.update(deltaSpeedTime);
-                        rightSpeedEstimator.update(deltaSpeedTime);
-                        poseEstimator.update();
-                        //System.out.printf("Estimated left speed is %.3f and desired left speed is %.3f \n", simulator.estimations.leftSpeed, velocityController.desiredSpeedLeft);
-                        lastSpeedTime = currentTime;
-                    }
-                }
-            } catch (InterruptedException shouldNotHappen) {
-                throw new Error(shouldNotHappen);
-            }
-        });
+        Thread updateThread = new Thread(updater::start);
         updateThread.setDaemon(true);
         updateThread.start();
 
@@ -161,7 +148,8 @@ public class SimulatorUI {
             try {
                 while (true) {
                     sleep(20);
-                    SwingUtilities.invokeLater(frame::repaint);
+                    SwingUtilities.invokeLater(simulatorFrame::repaint);
+                    SwingUtilities.invokeLater(monitorFrame::repaint);
                 }
             } catch (InterruptedException shouldNotHappen) {
                 throw new Error(shouldNotHappen);

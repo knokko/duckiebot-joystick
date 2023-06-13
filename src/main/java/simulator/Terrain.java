@@ -19,6 +19,7 @@ public class Terrain {
     public static final Terrain SLOPED_FAST = new Terrain(motorSignal -> max(0.0, 1.8 * motorSignal - 0.1));
 
     public static final Terrain NOISY_SLOW = new Terrain(motorSignal -> max(0, 0.3 * Math.random() + 0.7 * motorSignal - 0.2));
+    public static final Terrain VERY_NOISY_SLOW = new Terrain(motorSignal -> max(0, (0.6 * Math.random() + 0.1) * motorSignal - 0.2));
 
     public static final Terrain SKEWED_SLOW = new Terrain(
             leftSignal -> 0.6 * leftSignal - 0.15,

@@ -1,6 +1,7 @@
 package simulator;
 
 import controller.estimation.DuckieEstimations;
+import controller.updater.ControllerFunction;
 import state.DuckieControls;
 import state.DuckiePose;
 import state.DuckieState;
@@ -9,7 +10,7 @@ import static controller.util.DuckieWheels.*;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 
-public class Simulator {
+public class Simulator implements ControllerFunction {
 
     private final Terrain terrain;
     public final DuckiePose realPose;
@@ -29,6 +30,7 @@ public class Simulator {
     /**
      * This should be called 1000 times per second
      */
+    @Override
     public synchronized void update(double deltaTime) {
         realPose.x += deltaTime * realPose.velocityX;
         realPose.y += deltaTime * realPose.velocityY;
@@ -45,10 +47,12 @@ public class Simulator {
         if (realPose.angle >= 1) realPose.angle -= 1;
         if (realPose.angle < 0) realPose.angle += 1;
 
-        // Add feedback latency
+        // TODO Add feedback latency
         this.exactLeftWheelTicks += WHEEL_TICKS_PER_TURN * deltaTime * leftVelocity / (2 * Math.PI * WHEEL_RADIUS);
         this.exactRightWheelTicks += WHEEL_TICKS_PER_TURN * deltaTime * rightVelocity / (2 * Math.PI * WHEEL_RADIUS);
         trackedState.leftWheelEncoder = (int) exactLeftWheelTicks;
         trackedState.rightWheelEncoder = (int) exactRightWheelTicks;
+        trackedState.leftWheelControl = controls.velLeft;
+        trackedState.rightWheelControl = controls.velRight;
     }
 }

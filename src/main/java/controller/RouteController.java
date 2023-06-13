@@ -3,14 +3,14 @@ package controller;
 import controller.desired.DesiredPose;
 import controller.desired.DesiredVelocity;
 import controller.estimation.DuckieEstimations;
+import controller.updater.ControllerFunction;
 import state.DuckieControls;
-import state.DuckieState;
 
 import java.util.Queue;
 
 import static java.lang.Math.*;
 
-public class RouteController {
+public class RouteController implements ControllerFunction {
 
     private final Queue<DesiredPose> route;
     private final DesiredVelocity desiredVelocity;
@@ -29,7 +29,11 @@ public class RouteController {
         this.maxAcceleration = maxAcceleration;
     }
 
+    @Override
     public void update(double deltaTime) {
+        // 0.7 on carpet and 0.8 on table?
+        double speed = 0.2;
+
         var destinationPose = route.peek();
         if (destinationPose == null) {
             desiredVelocity.speed = 0.0;
@@ -37,13 +41,11 @@ public class RouteController {
             return;
         }
 
-        System.out.println("Going to " + destinationPose);
-
         var dx = destinationPose.x - estimations.x;
         var dy = destinationPose.y - estimations.y;
         var distance = sqrt(dx * dx + dy * dy);
 
-        if ((distance < 0.02) || (distance < 0.12 && route.size() > 1)) { // TODO Do better than this
+        if (distance * 0.5 / speed < 0.3) { // TODO Do better than this
             route.remove();
             return;
         }
@@ -64,6 +66,7 @@ public class RouteController {
         }
 
         desiredVelocity.angle = atan2(dy, dx) / (2 * Math.PI);
-        desiredVelocity.speed = 0.2;
+        desiredVelocity.speed = speed;
+        desiredVelocity.turnTime = (distance * 0.4) / desiredVelocity.speed;
     }
 }

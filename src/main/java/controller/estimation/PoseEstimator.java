@@ -1,12 +1,13 @@
 package controller.estimation;
 
+import controller.updater.ControllerFunction;
 import state.DuckieState;
 
 import static controller.util.DuckieWheels.*;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 
-public class PoseEstimator {
+public class PoseEstimator implements ControllerFunction {
 
     private final DuckieState trackedState;
     private final DuckieEstimations estimations;
@@ -22,7 +23,8 @@ public class PoseEstimator {
     }
 
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
-    public void update() {
+    @Override
+    public void update(double deltaTime) {
         int currentLeftTicks = trackedState.leftWheelEncoder;
         int currentRightTicks = trackedState.rightWheelEncoder;
 

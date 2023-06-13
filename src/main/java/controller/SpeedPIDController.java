@@ -1,9 +1,11 @@
 package controller;
 
+import controller.updater.ControllerFunction;
+
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 
-public class SpeedPIDController {
+public class SpeedPIDController implements ControllerFunction {
 
     private final double pGain, iGain, dGain; // 10, 0.9, 5
     private final DoubleSupplier estimatedSpeed, getDesiredSpeed, getControlInput;
@@ -27,6 +29,7 @@ public class SpeedPIDController {
         this.getControlInput = getControlInput;
     }
 
+    @Override
     public void update(double deltaTime) {
         double currentSpeed = estimatedSpeed.getAsDouble(); // meters per second
 

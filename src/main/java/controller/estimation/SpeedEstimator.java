@@ -1,5 +1,7 @@
 package controller.estimation;
 
+import controller.updater.ControllerFunction;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.DoubleConsumer;
@@ -9,7 +11,7 @@ import java.util.function.IntSupplier;
 import static controller.util.DuckieWheels.WHEEL_RADIUS;
 import static controller.util.DuckieWheels.WHEEL_TICKS_PER_TURN;
 
-public class SpeedEstimator {
+public class SpeedEstimator implements ControllerFunction {
 
     private final IntSupplier wheelTicks;
     private final DoubleConsumer speedEstimation;
@@ -29,6 +31,7 @@ public class SpeedEstimator {
         this.setQuickestSpeedChangeInterval = setQuickestSpeedChangeInterval;
     }
 
+    @Override
     public void update(double deltaTime) {
         globalTimer += deltaTime;
         int currentTicks = wheelTicks.getAsInt();
