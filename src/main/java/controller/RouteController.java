@@ -54,8 +54,8 @@ public class RouteController implements ControllerFunction {
         if (route.size() == 1) {
             double currentSpeed = (estimations.leftSpeed + estimations.rightSpeed) * 0.5;
             double breakTime = deltaTime + max(
-                    abs(controls.velLeft) / maxAcceleration + estimations.leftSpeedChangeInterval,
-                    abs(controls.velRight) / maxAcceleration + estimations.rightSpeedChangeInterval
+                    abs(controls.velLeft) / maxAcceleration + estimations.leftControlLatency,
+                    abs(controls.velRight) / maxAcceleration + estimations.rightControlLatency
             );
             double breakDistance = 0.5 * currentSpeed * breakTime;
             if (breakDistance > distance) {

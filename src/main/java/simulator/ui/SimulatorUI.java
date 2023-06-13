@@ -19,24 +19,9 @@ import javax.swing.*;
 
 import java.util.LinkedList;
 
-import static java.lang.Math.*;
 import static java.lang.Thread.sleep;
 
 public class SimulatorUI {
-
-    private static void addLeftTurn(LinkedList<DesiredPose> route, int startX, int startY, double currentAngle) {
-        double angle = 2 * Math.PI * currentAngle;
-        double radius = 0.1;
-        double centerX = 0.2 * (max(0, cos(angle) - sin(angle)) + startX);
-        double centerY = 0.2 * (max(0, cos(angle) + sin(angle)) + startY);
-
-        for (int part = 1; part <= 4; part++) {
-            double partAngle = angle - Math.toRadians(90) + 0.5 * Math.PI * part / 4.0;
-            route.add(new DesiredPose(centerX + radius * cos(partAngle), centerY + radius * sin(partAngle), 0));
-        }
-        var lastPose = route.getLast();
-        route.add(new DesiredPose(lastPose.x - 0.16 * sin(angle), lastPose.y + 0.16 * cos(angle), 0));
-    }
 
     public static void main(String[] args) {
         boolean useDuckiebot = args.length > 0 && args[0].equals("duckie");
@@ -107,12 +92,10 @@ public class SimulatorUI {
                 () -> controls.velRight
         );
         var leftSpeedEstimator = new SpeedEstimator(
-                () -> trackedState.leftWheelEncoder, newSpeed -> estimations.leftSpeed = newSpeed,
-                () -> estimations.leftSpeedChangeInterval, newInterval -> estimations.leftSpeedChangeInterval = newInterval
+                () -> trackedState.leftWheelEncoder, newSpeed -> estimations.leftSpeed = newSpeed
         );
         var rightSpeedEstimator = new SpeedEstimator(
-                () -> trackedState.rightWheelEncoder, newSpeed -> estimations.rightSpeed = newSpeed,
-                () -> estimations.rightSpeedChangeInterval, newInterval -> estimations.rightSpeedChangeInterval = newInterval
+                () -> trackedState.rightWheelEncoder, newSpeed -> estimations.rightSpeed = newSpeed
         );
 
         var updater = new ControllerUpdater();
@@ -149,6 +132,7 @@ public class SimulatorUI {
         Thread repaintThread = new Thread(() -> {
             try {
                 while (true) {
+                    //noinspection BusyWait
                     sleep(20);
                     SwingUtilities.invokeLater(simulatorFrame::repaint);
                     SwingUtilities.invokeLater(monitorFrame::repaint);

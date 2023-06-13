@@ -14,7 +14,7 @@ public class DuckieEstimations {
      */
     public volatile double angle;
     /**
-     * The minimum amount of time between 2 time instants with different observed speeds
+     * The estimated time between giving motor commands and changing the speed, in seconds
      */
-    public volatile double leftSpeedChangeInterval = Double.NaN, rightSpeedChangeInterval =  Double.NaN;
+    public volatile double leftControlLatency = 0.03, rightControlLatency = 0.03; // TODO Don't hardcode this
 }

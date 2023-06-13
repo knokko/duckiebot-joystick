@@ -5,7 +5,6 @@ import controller.updater.ControllerFunction;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.DoubleConsumer;
-import java.util.function.DoubleSupplier;
 import java.util.function.IntSupplier;
 
 import static controller.util.DuckieWheels.WHEEL_RADIUS;
@@ -15,27 +14,23 @@ public class SpeedEstimator implements ControllerFunction {
 
     private final IntSupplier wheelTicks;
     private final DoubleConsumer speedEstimation;
-    private final DoubleSupplier getQuickestSpeedChangeInterval;
-    private final DoubleConsumer setQuickestSpeedChangeInterval;
 
     private double globalTimer;
+    private double quickestSpeedChangeInterval = Double.NaN;
     private final List<PositionEntry> lastEntries = new LinkedList<>();
 
     public SpeedEstimator(
-            IntSupplier wheelTicks, DoubleConsumer speedEstimation,
-            DoubleSupplier getQuickestSpeedChangeInterval, DoubleConsumer setQuickestSpeedChangeInterval
+            IntSupplier wheelTicks, DoubleConsumer speedEstimation
     ) {
         this.wheelTicks = wheelTicks;
         this.speedEstimation = speedEstimation;
-        this.getQuickestSpeedChangeInterval = getQuickestSpeedChangeInterval;
-        this.setQuickestSpeedChangeInterval = setQuickestSpeedChangeInterval;
     }
 
     @Override
     public void update(double deltaTime) {
         globalTimer += deltaTime;
         int currentTicks = wheelTicks.getAsInt();
-        double quickestSpeedChangeInterval = getQuickestSpeedChangeInterval.getAsDouble();
+
         if (Double.isNaN(quickestSpeedChangeInterval)) {
             speedEstimation.accept(0);
         } else {
@@ -49,14 +44,15 @@ public class SpeedEstimator implements ControllerFunction {
                 double speedChangeInterval = globalTimer - entry.timeStamp;
                 if (Double.isNaN(quickestSpeedChangeInterval) || speedChangeInterval < quickestSpeedChangeInterval) {
                     quickestSpeedChangeInterval = speedChangeInterval;
-                    setQuickestSpeedChangeInterval.accept(speedChangeInterval);
                     break;
                 }
             }
         }
-        if (!Double.isNaN(quickestSpeedChangeInterval)) {
-            lastEntries.removeIf(entry -> entry.timeStamp < globalTimer - 2 * getQuickestSpeedChangeInterval.getAsDouble());
-        }
+
+        // Delete entries older than 3 * quickestSpeedChangeInterval
+        double maxTimeDifference = 3 * quickestSpeedChangeInterval;
+        lastEntries.removeIf(entry -> entry.timeStamp < globalTimer - maxTimeDifference);
+
         lastEntries.add(0, new PositionEntry(currentTicks, globalTimer));
     }
 
