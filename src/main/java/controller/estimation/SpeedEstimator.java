@@ -93,7 +93,6 @@ public class SpeedEstimator implements ControllerFunction {
             speedFunction.currentTime = globalTimer;
             long endTime = System.nanoTime();
             speedEstimation.accept((speedFunction.positionLinear + 2 * globalTimer * speedFunction.positionQuadratic) * 2 * Math.PI * WHEEL_RADIUS / WHEEL_TICKS_PER_TURN);
-            System.out.printf("Took %.2f ms\n", (endTime - startTime) / 1_000_000.0);
         } else speedEstimation.accept(0.0);
     }
 

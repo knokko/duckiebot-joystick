@@ -81,13 +81,16 @@ public class SimulatorUI {
         var leftAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velLeft = signal);
         var rightAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velRight = signal);
 
+        double pGain = 0.018;
+        double iGain = 0.004;
+        double dGain = 0.0004;
         var leftPidController = new SpeedPIDController(
-                0.018, 0.004, 0.0004, estimations.leftPID, () -> estimations.leftSpeed,
+                pGain, iGain, dGain, estimations.leftPID, () -> estimations.leftSpeed,
                 () -> desiredWheelSpeed.leftSpeed, leftAccelerationLimiter::setControlInput,
                 () -> controls.velLeft
         );
         var rightPidController = new SpeedPIDController(
-                0.018, 0.004, 0.0004, estimations.rightPID, () -> estimations.rightSpeed,
+                pGain, iGain, dGain, estimations.rightPID, () -> estimations.rightSpeed,
                 () -> desiredWheelSpeed.rightSpeed, rightAccelerationLimiter::setControlInput,
                 () -> controls.velRight
         );

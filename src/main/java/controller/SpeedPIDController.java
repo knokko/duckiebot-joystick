@@ -34,7 +34,6 @@ public class SpeedPIDController implements ControllerFunction {
 
     @Override
     public void update(double deltaTime) {
-        System.out.printf("deltaTime is %.4f\n", deltaTime);
         double currentSpeed = estimatedSpeed.getAsDouble(); // meters per second
 
         // Don't update faster than the speed estimator
@@ -53,7 +52,7 @@ public class SpeedPIDController implements ControllerFunction {
             double iValue = iGain * errorSum;
             double dValue = dGain * derivativeError;
 
-            setControlInput.accept(pValue + iValue + dValue);
+            setControlInput.accept(getControlInput.getAsDouble() + pValue + iValue + dValue);
             pidValues.p = pValue;
             pidValues.i = iValue;
             pidValues.d = dValue;
