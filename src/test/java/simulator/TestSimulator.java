@@ -11,6 +11,9 @@ public class TestSimulator {
     public void testDriveForwardOnIdealTerrain() {
         var simulator = new Simulator(Terrain.IDEAL);
 
+        simulator.realPose.x = 0.0;
+        simulator.realPose.y = 0.0;
+
         simulator.controls.velLeft = 1.0;
         simulator.controls.velRight = 1.0;
 
@@ -32,6 +35,9 @@ public class TestSimulator {
     @Test
     public void testDriveRightWheelOnIdealTerrain() {
         var simulator = new Simulator(Terrain.IDEAL);
+
+        simulator.realPose.x = 0.0;
+        simulator.realPose.y = 0.0;
 
         simulator.controls.velLeft = 0.0;
         simulator.controls.velRight = 1.0;
@@ -59,6 +65,10 @@ public class TestSimulator {
     @Test
     public void testRotateRightOnIdealTerrain() {
         var simulator = new Simulator(Terrain.IDEAL);
+
+        simulator.realPose.x = 0.0;
+        simulator.realPose.y = 0.0;
+
         simulator.controls.velLeft = 1.0;
         simulator.controls.velRight = -1.0;
 
