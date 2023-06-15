@@ -10,17 +10,57 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.DoubleSupplier;
 
+import static controller.util.DuckieWheels.WHEEL_RADIUS;
+import static controller.util.DuckieWheels.WHEEL_TICKS_PER_TURN;
+
 public class MonitorBoard extends JPanel {
 
     private final Collection<GraphSequence> graphSequences = new ArrayList<>();
 
+    private Integer initialLeftTicks, initialRightTicks;
+
     public MonitorBoard(DuckieState trackedState, DuckieControls controls, DuckieEstimations estimations) {
         graphSequences.add(new GraphSequence("Left control input", new Color(200, 150, 0), () -> controls.velLeft));
-        graphSequences.add(new GraphSequence("Right control input", new Color(180, 170, 20), () -> controls.velRight));
-        graphSequences.add(new GraphSequence("Left speed", new Color(0, 50, 200), () -> estimations.leftSpeed));
-        graphSequences.add(new GraphSequence("Right speed", new Color(20, 70, 180), () -> estimations.rightSpeed));
-        graphSequences.add(new GraphSequence("Left control output", new Color(250, 0, 0), () -> trackedState.leftWheelControl));
-        graphSequences.add(new GraphSequence("Right control output", new Color(230, 0, 20), () -> trackedState.rightWheelControl));
+        graphSequences.add(new GraphSequence("Right control input", new Color(250, 190, 20), () -> controls.velRight));
+        graphSequences.add(new GraphSequence("Left speed", new Color(0, 50, 180), () -> estimations.leftSpeed));
+        graphSequences.add(new GraphSequence("Right speed", new Color(20, 70, 250), () -> estimations.rightSpeed));
+        graphSequences.add(new GraphSequence("Left control output", new Color(200, 0, 0), () -> trackedState.leftWheelControl));
+        graphSequences.add(new GraphSequence("Right control output", new Color(250, 0, 20), () -> trackedState.rightWheelControl));
+        graphSequences.add(new GraphSequence("Left wheel ticks", new Color(0, 200, 10), () -> {
+            Integer leftTicks = trackedState.leftWheelEncoder;
+            if (leftTicks != null) {
+                if (initialLeftTicks == null) initialLeftTicks = leftTicks;
+                else return (leftTicks - initialLeftTicks) * 0.002;
+            }
+            return 0.0;
+        }));
+        graphSequences.add(new GraphSequence("Right wheel ticks", new Color(0, 250, 30), () -> {
+            Integer rightTicks = trackedState.rightWheelEncoder;
+            if (rightTicks != null) {
+                if (initialRightTicks == null) initialRightTicks = rightTicks;
+                else return (rightTicks - initialRightTicks) * 0.002;
+            }
+            return 0.0;
+        }));
+
+//        graphSequences.add(new GraphSequence("Left wheel estimator", new Color(200, 0, 200), () -> {
+//            if (initialLeftTicks != null) {
+//                var speedFunction = estimations.leftSpeedFunction;
+//                return (speedFunction.positionOffset + speedFunction.positionLinear * speedFunction.currentTime + speedFunction.positionQuadratic * speedFunction.currentTime * speedFunction.currentTime - initialLeftTicks) * 0.002;
+//            } else return 0.0;
+//        }));
+//        graphSequences.add(new GraphSequence("Left wheel derivative", new Color(0, 200, 200), () -> {
+//            if (initialLeftTicks != null) {
+//                var speedFunction = estimations.leftSpeedFunction;
+//                return (speedFunction.speedOffset + speedFunction.currentTime * speedFunction.speedLinear) * WHEEL_RADIUS * 2 * Math.PI / WHEEL_TICKS_PER_TURN;
+//            } else return 0.0;
+//        }));
+
+        double pidScalar = 100.0;
+        double pidOffset = -0.5;
+        graphSequences.add(new GraphSequence("Left P", new Color(150, 0, 250), () -> estimations.leftPID.p * pidScalar + pidOffset));
+        graphSequences.add(new GraphSequence("Left I", new Color(250, 0, 150), () -> estimations.leftPID.i * pidScalar + pidOffset));
+        graphSequences.add(new GraphSequence("Left D", new Color(0, 250, 250), () -> estimations.leftPID.d * pidScalar + pidOffset));
     }
 
     private static final int GRAPH_WIDTH = 500;
@@ -48,6 +88,7 @@ public class MonitorBoard extends JPanel {
             GraphPoint lastPoint = null;
             for (var point : sequence.points) {
                 if (lastPoint != null) {
+                    // Graph width is 500 pixels and 1 pixel is 8 milliseconds, so 4 seconds in total
                     int x1 = GRAPH_WIDTH - (int) (currentTime - lastPoint.time) / 8;
                     int y1 = (int) ((1.0 - lastPoint.value) * GRAPH_HEIGHT / 2);
                     int x2 = GRAPH_WIDTH - (int) (currentTime - point.time) / 8;

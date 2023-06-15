@@ -1,5 +1,6 @@
 package controller;
 
+import controller.estimation.DuckieEstimations;
 import controller.updater.ControllerFunction;
 
 import java.util.function.DoubleConsumer;
@@ -7,7 +8,8 @@ import java.util.function.DoubleSupplier;
 
 public class SpeedPIDController implements ControllerFunction {
 
-    private final double pGain, iGain, dGain; // 10, 0.9, 5
+    private final double pGain, iGain, dGain;
+    private final DuckieEstimations.PIDValues pidValues;
     private final DoubleSupplier estimatedSpeed, getDesiredSpeed, getControlInput;
     private final DoubleConsumer setControlInput;
 
@@ -16,13 +18,14 @@ public class SpeedPIDController implements ControllerFunction {
     private double errorSum;
 
     public SpeedPIDController(
-            double pGain, double iGain, double dGain,
+            double pGain, double iGain, double dGain, DuckieEstimations.PIDValues pidValues,
             DoubleSupplier estimatedSpeed, DoubleSupplier getDesiredSpeed,
             DoubleConsumer setControlInput, DoubleSupplier getControlInput
     ) {
         this.pGain = pGain;
         this.iGain = iGain;
         this.dGain = dGain;
+        this.pidValues = pidValues;
         this.estimatedSpeed = estimatedSpeed;
         this.getDesiredSpeed = getDesiredSpeed;
         this.setControlInput = setControlInput;
@@ -31,6 +34,7 @@ public class SpeedPIDController implements ControllerFunction {
 
     @Override
     public void update(double deltaTime) {
+        System.out.printf("deltaTime is %.4f\n", deltaTime);
         double currentSpeed = estimatedSpeed.getAsDouble(); // meters per second
 
         // Don't update faster than the speed estimator
@@ -47,9 +51,12 @@ public class SpeedPIDController implements ControllerFunction {
 
             double pValue = pGain * error;
             double iValue = iGain * errorSum;
-            double dValue = dGain * derivativeError * deltaTime;
+            double dValue = dGain * derivativeError;
 
-            setControlInput.accept(getControlInput.getAsDouble() + pValue + iValue + dValue);
+            setControlInput.accept(pValue + iValue + dValue);
+            pidValues.p = pValue;
+            pidValues.i = iValue;
+            pidValues.d = dValue;
         }
 
         lastError = error;

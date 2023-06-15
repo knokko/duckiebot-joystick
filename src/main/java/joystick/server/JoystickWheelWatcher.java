@@ -29,8 +29,8 @@ public class JoystickWheelWatcher {
     public void start() {
         start("rostopic echo /db4/left_wheel_encoder_node/tick/data", line -> leftEncoderConsumer.accept(parseInt(line)));
         start("rostopic echo /db4/right_wheel_encoder_node/tick/data", line -> rightEncoderConsumer.accept(parseInt(line)));
-        start("rostopic echo /db4/wheels_driver_node/wheels_cmd/vel_left", line -> leftMotorConsumer.accept(parseDouble(line)));
-        start("rostopic echo /db4/wheels_driver_node/wheels_cmd/vel_right", line -> rightMotorConsumer.accept(parseDouble(line)));
+        start("rostopic echo /db4/wheels_driver_node/wheels_cmd_executed/vel_left", line -> leftMotorConsumer.accept(parseDouble(line)));
+        start("rostopic echo /db4/wheels_driver_node/wheels_cmd_executed/vel_right", line -> rightMotorConsumer.accept(parseDouble(line)));
         start("rostopic echo /db4/front_center_tof_driver_node/range/range", line -> tofConsumer.accept(parseDouble(line)));
     }
 

@@ -45,7 +45,7 @@ public class SimulatorUI {
             connection.start();
         } else {
             var simulator = new Simulator(
-                    Terrain.SIMPLE_SLOW, 0.0, 0.0, 0.1, 0.1
+                    Terrain.SIMPLE_FAST, 0.08, 0.08, 0.0, 0.0
             );
             estimations = simulator.estimations;
             controls = simulator.controls;
@@ -53,7 +53,7 @@ public class SimulatorUI {
             updateFunction = simulator;
         }
 
-        double maxAcceleration = 1.0;
+        double maxAcceleration = 5.7;
 
         var route = new LinkedList<DesiredPose>();
         route.add(new DesiredPose(0.4, 0.1, 0));
@@ -82,34 +82,34 @@ public class SimulatorUI {
         var rightAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velRight = signal);
 
         var leftPidController = new SpeedPIDController(
-                0.9, 0.00, 0.3, () -> estimations.leftSpeed,
+                0.018, 0.004, 0.0004, estimations.leftPID, () -> estimations.leftSpeed,
                 () -> desiredWheelSpeed.leftSpeed, leftAccelerationLimiter::setControlInput,
                 () -> controls.velLeft
         );
         var rightPidController = new SpeedPIDController(
-                0.9, 0.00, 0.3, () -> estimations.rightSpeed,
+                0.018, 0.004, 0.0004, estimations.rightPID, () -> estimations.rightSpeed,
                 () -> desiredWheelSpeed.rightSpeed, rightAccelerationLimiter::setControlInput,
                 () -> controls.velRight
         );
         var leftSpeedEstimator = new SpeedEstimator(
-                () -> trackedState.leftWheelEncoder, newSpeed -> estimations.leftSpeed = newSpeed
+                () -> trackedState.leftWheelEncoder, newSpeed -> estimations.leftSpeed = newSpeed, estimations.leftSpeedFunction
         );
         var rightSpeedEstimator = new SpeedEstimator(
-                () -> trackedState.rightWheelEncoder, newSpeed -> estimations.rightSpeed = newSpeed
+                () -> trackedState.rightWheelEncoder, newSpeed -> estimations.rightSpeed = newSpeed, estimations.rightSpeedFunction
         );
 
         var updater = new ControllerUpdater();
 
         updater.addController(updateFunction, 1);
-        updater.addController(routeController, 50);
-        updater.addController(leftPidController, 70);
-        updater.addController(rightPidController, 70);
-        updater.addController(leftAccelerationLimiter, 10);
-        updater.addController(rightAccelerationLimiter, 10);
-        updater.addController(velocityController, 91);
-        updater.addController(leftSpeedEstimator, 30);
-        updater.addController(rightSpeedEstimator, 30);
-        updater.addController(poseEstimator, 30);
+        updater.addController(routeController, 5);
+        updater.addController(leftPidController, 5);
+        updater.addController(rightPidController, 5);
+        updater.addController(leftAccelerationLimiter, 1);
+        updater.addController(rightAccelerationLimiter, 1);
+        updater.addController(velocityController, 9);
+        updater.addController(leftSpeedEstimator, 5);
+        updater.addController(rightSpeedEstimator, 5);
+        updater.addController(poseEstimator, 3);
 
         var monitorFrame = new JFrame();
         monitorFrame.setSize(800, 500);

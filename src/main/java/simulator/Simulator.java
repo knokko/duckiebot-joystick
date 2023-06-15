@@ -38,6 +38,8 @@ public class Simulator implements ControllerFunction {
         this.estimations = new DuckieEstimations();
         this.controls = new DuckieControls();
         this.trackedState = new DuckieState();
+        this.trackedState.leftWheelEncoder = 0;
+        this.trackedState.rightWheelEncoder = 0;
 
         this.leftControl = new SimulatorLatency<>(leftControlLatency, 0.0);
         this.rightControl = new SimulatorLatency<>(rightControlLatency, 0.0);
