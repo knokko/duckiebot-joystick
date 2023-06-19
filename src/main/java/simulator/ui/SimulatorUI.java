@@ -45,7 +45,7 @@ public class SimulatorUI {
             connection.start();
         } else {
             var simulator = new Simulator(
-                    Terrain.SIMPLE_FAST, 0.08, 0.08, 0.0, 0.0
+                    Terrain.SIMPLE_SLOW, 0.08, 0.08, 0.0, 0.0
             );
             estimations = simulator.estimations;
             controls = simulator.controls;
@@ -81,9 +81,9 @@ public class SimulatorUI {
         var leftAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velLeft = signal);
         var rightAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velRight = signal);
 
-        double pGain = 0.018;
-        double iGain = 0.004;
-        double dGain = 0.0004;
+        double pGain = 0.060;
+        double iGain = 0.000;
+        double dGain = 0.000;
         var leftPidController = new SpeedPIDController(
                 pGain, iGain, dGain, estimations.leftPID, () -> estimations.leftSpeed,
                 () -> desiredWheelSpeed.leftSpeed, leftAccelerationLimiter::setControlInput,
