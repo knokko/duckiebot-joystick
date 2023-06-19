@@ -21,6 +21,7 @@ public class DuckieEstimations {
     // TODO Remove after testing
     public final SpeedFunction leftSpeedFunction = new SpeedFunction(), rightSpeedFunction = new SpeedFunction();
     public final PIDValues leftPID = new PIDValues(), rightPID = new PIDValues();
+    public final TransferFunction leftTransfer = new TransferFunction(), rightTransfer = new TransferFunction();
 
     public static class SpeedFunction {
 
@@ -29,5 +30,9 @@ public class DuckieEstimations {
 
     public static class PIDValues {
         public volatile double p, i, d;
+    }
+
+    public static class TransferFunction {
+        public volatile double slope, throttle;
     }
 }

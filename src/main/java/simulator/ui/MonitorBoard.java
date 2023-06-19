@@ -55,6 +55,8 @@ public class MonitorBoard extends JPanel {
 //                return (speedFunction.speedOffset + speedFunction.currentTime * speedFunction.speedLinear) * WHEEL_RADIUS * 2 * Math.PI / WHEEL_TICKS_PER_TURN;
 //            } else return 0.0;
 //        }));
+        graphSequences.add(new GraphSequence("Left transfer slope", new Color(12, 67, 120), () -> estimations.leftTransfer.slope * 0.6));
+        graphSequences.add(new GraphSequence("Left transfer slope", new Color(22, 77, 140), () -> estimations.rightTransfer.slope * 0.6));
 
         double pidScalar = 100.0;
         double pidOffset = -0.5;

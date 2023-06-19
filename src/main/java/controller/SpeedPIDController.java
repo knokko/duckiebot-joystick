@@ -19,6 +19,7 @@ public class SpeedPIDController implements ControllerFunction {
     private final DuckieEstimations.PIDValues pidValues;
     private final DoubleSupplier estimatedSpeed, getDesiredSpeed, getControlInput;
     private final DoubleConsumer setControlInput;
+    private final DuckieEstimations.TransferFunction transferFunction;
 
     private final List<ErrorEntry> lastErrors = new ArrayList<>();
     private double globalTime = 0.0;
@@ -29,7 +30,8 @@ public class SpeedPIDController implements ControllerFunction {
     public SpeedPIDController(
             double pGain, double iGain, double dGain, DuckieEstimations.PIDValues pidValues,
             DoubleSupplier estimatedSpeed, DoubleSupplier getDesiredSpeed,
-            DoubleConsumer setControlInput, DoubleSupplier getControlInput
+            DoubleConsumer setControlInput, DoubleSupplier getControlInput,
+            DuckieEstimations.TransferFunction transferFunction
     ) {
         this.pGain = pGain;
         this.iGain = iGain;
@@ -39,6 +41,7 @@ public class SpeedPIDController implements ControllerFunction {
         this.getDesiredSpeed = getDesiredSpeed;
         this.setControlInput = setControlInput;
         this.getControlInput = getControlInput;
+        this.transferFunction = transferFunction;
     }
 
     @Override
@@ -70,9 +73,13 @@ public class SpeedPIDController implements ControllerFunction {
                 }
 
                 Matrix transposedTimes = timeMatrix.transpose();
-                Vector coefficients = transposedTimes.multiply(timeMatrix).withInverter(LinearAlgebra.InverterFactory.GAUSS_JORDAN)
-                        .inverse().multiply(transposedTimes).multiply(errorVector);
-                derivativeError = coefficients.get(1) + 2 * globalTime * coefficients.get(2);
+                try {
+                    Vector coefficients = transposedTimes.multiply(timeMatrix).withInverter(LinearAlgebra.InverterFactory.GAUSS_JORDAN)
+                            .inverse().multiply(transposedTimes).multiply(errorVector);
+                    derivativeError = coefficients.get(1) + 2 * globalTime * coefficients.get(2);
+                } catch (IllegalArgumentException notInvertible) {
+                    derivativeError = 0.0;
+                }
             } else {
                 //System.out.printf("error is %.3f and lastError is %.3f and deltaTime is %.3f\n", error, lastError, deltaTime);
                 //derivativeError = (error - lastError) / deltaTime; // meters per second^2
@@ -83,11 +90,16 @@ public class SpeedPIDController implements ControllerFunction {
             double iValue = iGain * errorSum;
             double dValue = dGain * derivativeError;
 
-            setControlInput.accept(getControlInput.getAsDouble() + pValue + iValue + dValue);
+            double transferSlope;
+            if (transferFunction.slope > 0.0) transferSlope = transferFunction.slope;
+            else transferSlope = 2.0; // Take a ridiculously large value: better safe than sorry
+            //transferSlope = 2.0;
+
+            setControlInput.accept(getControlInput.getAsDouble() + (pValue + iValue + dValue) / transferSlope);
             pidValues.p = pValue;
             pidValues.i = iValue;
             pidValues.d = dValue;
-            System.out.printf("error is %.3f and derivativeError is %.3f\n", error, derivativeError);
+            //System.out.printf("error is %.3f and derivativeError is %.3f\n", error, derivativeError);
         }
 
         lastError = error;

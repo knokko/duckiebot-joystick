@@ -7,6 +7,7 @@ import controller.desired.DesiredWheelSpeed;
 import controller.estimation.DuckieEstimations;
 import controller.estimation.PoseEstimator;
 import controller.estimation.SpeedEstimator;
+import controller.estimation.TransferFunctionEstimator;
 import controller.updater.ControllerFunction;
 import controller.updater.ControllerUpdater;
 import joystick.client.JoystickClientConnection;
@@ -81,18 +82,25 @@ public class SimulatorUI {
         var leftAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velLeft = signal);
         var rightAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velRight = signal);
 
-        double pGain = 0.060;
+        var leftSpeedFunctionEstimator = new TransferFunctionEstimator(
+                () -> trackedState.leftWheelControl, () -> estimations.leftSpeed, estimations.leftTransfer
+        );
+        var rightSpeedFunctionEstimator = new TransferFunctionEstimator(
+                () -> trackedState.rightWheelControl, () -> estimations.rightSpeed, estimations.rightTransfer
+        );
+
+        double pGain = 0.020;
         double iGain = 0.000;
         double dGain = 0.000;
         var leftPidController = new SpeedPIDController(
                 pGain, iGain, dGain, estimations.leftPID, () -> estimations.leftSpeed,
                 () -> desiredWheelSpeed.leftSpeed, leftAccelerationLimiter::setControlInput,
-                () -> controls.velLeft
+                () -> controls.velLeft, estimations.leftTransfer
         );
         var rightPidController = new SpeedPIDController(
                 pGain, iGain, dGain, estimations.rightPID, () -> estimations.rightSpeed,
                 () -> desiredWheelSpeed.rightSpeed, rightAccelerationLimiter::setControlInput,
-                () -> controls.velRight
+                () -> controls.velRight, estimations.rightTransfer
         );
         var leftSpeedEstimator = new SpeedEstimator(
                 () -> trackedState.leftWheelEncoder, newSpeed -> estimations.leftSpeed = newSpeed, estimations.leftSpeedFunction
@@ -113,6 +121,8 @@ public class SimulatorUI {
         updater.addController(leftSpeedEstimator, 5);
         updater.addController(rightSpeedEstimator, 5);
         updater.addController(poseEstimator, 3);
+        updater.addController(leftSpeedFunctionEstimator, 1);
+        updater.addController(rightSpeedFunctionEstimator, 1);
 
         var monitorFrame = new JFrame();
         monitorFrame.setSize(800, 500);
