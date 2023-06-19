@@ -31,7 +31,7 @@ public class VelocityController implements ControllerFunction {
 
         double turnTime = desiredVelocity.turnTime;
         double extraDistanceRight = Math.PI * DISTANCE_BETWEEN_WHEELS * errorAngle;
-        double angleCorrection = extraDistanceRight / turnTime;
+        double angleCorrection = extraDistanceRight / turnTime; // Should be PID controlled
 
         double desiredSpeed = desiredVelocity.speed;
 

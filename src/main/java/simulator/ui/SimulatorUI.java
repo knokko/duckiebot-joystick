@@ -58,16 +58,16 @@ public class SimulatorUI {
 
         var route = new LinkedList<DesiredPose>();
         route.add(new DesiredPose(0.4, 0.1, 0));
-        route.add(new DesiredPose(0.6, 0.1, 0));
-        route.add(new DesiredPose(0.7, 0.2, 0.25));
-        route.add(new DesiredPose(0.7, 0.4, 0.25));
-        route.add(new DesiredPose(0.7, 0.6, 0.25));
-        route.add(new DesiredPose(0.6, 0.7, 0.5));
+        //route.add(new DesiredPose(0.6, 0.1, 0));
+        //route.add(new DesiredPose(0.7, 0.2, 0.25));
+        //route.add(new DesiredPose(0.7, 0.4, 0.25));
+        //route.add(new DesiredPose(0.7, 0.6, 0.25));
+        //route.add(new DesiredPose(0.6, 0.7, 0.5));
         route.add(new DesiredPose(0.4, 0.7, 0.5));
         route.add(new DesiredPose(0.2, 0.7, 0.5));
         route.add(new DesiredPose(0.1, 0.6, 0.75));
-        route.add(new DesiredPose(0.1, 0.4, 0.75));
-        route.add(new DesiredPose(0.1, 0.2, 0.75));
+        //route.add(new DesiredPose(0.1, 0.4, 0.75));
+        //route.add(new DesiredPose(0.1, 0.2, 0.75));
         route.add(new DesiredPose(0.1, 0.0, 0.75));
 
         var desiredVelocity = new DesiredVelocity();
@@ -76,9 +76,14 @@ public class SimulatorUI {
         var poseEstimator = new PoseEstimator(trackedState, estimations);
 
         //var routeController = new RouteController(route, desiredVelocity, estimations, controls, maxAcceleration);
-        var routeController = new BezierController(route, desiredVelocity, estimations, controls, maxAcceleration);
-        var velocityController = new VelocityController(desiredVelocity, desiredWheelSpeed, estimations);
+        //var routeController = new BezierController(route, desiredVelocity, estimations, controls, maxAcceleration);
+        var routeController = new StepController(route, desiredVelocity, estimations, controls, maxAcceleration);
+        var differentialDriver = new DifferentialDriver(desiredVelocity, desiredWheelSpeed, estimations, controls);
+        //var velocityController = new VelocityController(desiredVelocity, desiredWheelSpeed, estimations);
 
+        // Input voor PID desiredVelocity ->  controls.velLeft 
+
+        /*/
         var leftAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velLeft = signal);
         var rightAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velRight = signal);
 
@@ -91,7 +96,7 @@ public class SimulatorUI {
 
         double pGain = 0.020;
         double iGain = 0.000;
-        double dGain = 0.000;
+        double dGain = 0.005;
         var leftPidController = new SpeedPIDController(
                 pGain, iGain, dGain, estimations.leftPID, () -> estimations.leftSpeed,
                 () -> desiredWheelSpeed.leftSpeed, leftAccelerationLimiter::setControlInput,
@@ -107,22 +112,23 @@ public class SimulatorUI {
         );
         var rightSpeedEstimator = new SpeedEstimator(
                 () -> trackedState.rightWheelEncoder, newSpeed -> estimations.rightSpeed = newSpeed, estimations.rightSpeedFunction
-        );
+        );*/
 
         var updater = new ControllerUpdater();
 
         updater.addController(updateFunction, 1);
         updater.addController(routeController, 5);
-        updater.addController(leftPidController, 5);
-        updater.addController(rightPidController, 5);
-        updater.addController(leftAccelerationLimiter, 1);
-        updater.addController(rightAccelerationLimiter, 1);
-        updater.addController(velocityController, 9);
-        updater.addController(leftSpeedEstimator, 5);
-        updater.addController(rightSpeedEstimator, 5);
+        //updater.addController(leftPidController, 5);
+        //updater.addController(rightPidController, 5);
+        //updater.addController(leftAccelerationLimiter, 1);
+        //updater.addController(rightAccelerationLimiter, 1);
+        //updater.addController(velocityController, 9);
+        updater.addController(differentialDriver, 1);
+        //updater.addController(leftSpeedEstimator, 5);
+        //updater.addController(rightSpeedEstimator, 5);
         updater.addController(poseEstimator, 3);
-        updater.addController(leftSpeedFunctionEstimator, 1);
-        updater.addController(rightSpeedFunctionEstimator, 1);
+        //updater.addController(leftSpeedFunctionEstimator, 1);
+        //updater.addController(rightSpeedFunctionEstimator, 1);
 
         var monitorFrame = new JFrame();
         monitorFrame.setSize(800, 500);
