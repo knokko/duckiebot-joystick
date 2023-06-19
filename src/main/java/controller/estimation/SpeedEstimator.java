@@ -10,8 +10,7 @@ import java.util.List;
 import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
 
-import static controller.util.DuckieWheels.WHEEL_RADIUS;
-import static controller.util.DuckieWheels.WHEEL_TICKS_PER_TURN;
+import static controller.util.DuckieWheels.*;
 
 public class SpeedEstimator implements ControllerFunction {
 
@@ -93,7 +92,8 @@ public class SpeedEstimator implements ControllerFunction {
                 speedFunction.speedLinear = 2 * speedFunction.positionQuadratic;
                 speedFunction.currentTime = globalTimer;
                 long endTime = System.nanoTime();
-                speedEstimation.accept((speedFunction.positionLinear + 2 * globalTimer * speedFunction.positionQuadratic) * 2 * Math.PI * WHEEL_RADIUS / WHEEL_TICKS_PER_TURN);
+
+                speedEstimation.accept((speedFunction.positionLinear + 2 * globalTimer * speedFunction.positionQuadratic) * WHEEL_CIRCUMFERENCE / WHEEL_TICKS_PER_TURN);
             } catch (IllegalArgumentException notInvertible) {
                 speedEstimation.accept(0.0);
             }
