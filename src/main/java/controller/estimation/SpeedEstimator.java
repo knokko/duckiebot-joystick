@@ -80,19 +80,23 @@ public class SpeedEstimator implements ControllerFunction {
             }
 
             Matrix transposedTimes = timeMatrix.transpose();
-            Vector coefficients = transposedTimes.multiply(timeMatrix).withInverter(LinearAlgebra.InverterFactory.GAUSS_JORDAN)
-                    .inverse().multiply(transposedTimes).multiply(positionVector);
-            speedFunction.positionOffset = coefficients.get(0);
-            speedFunction.positionLinear = coefficients.get(1);
-            speedFunction.positionQuadratic = coefficients.get(2);
+            try {
+                Vector coefficients = transposedTimes.multiply(timeMatrix).withInverter(LinearAlgebra.InverterFactory.GAUSS_JORDAN)
+                        .inverse().multiply(transposedTimes).multiply(positionVector);
+                speedFunction.positionOffset = coefficients.get(0);
+                speedFunction.positionLinear = coefficients.get(1);
+                speedFunction.positionQuadratic = coefficients.get(2);
 
-            // position = offset + linear * time + quad * time * time ->
-            // d_position / dt = linear + 2 * quad * time
-            speedFunction.speedOffset = speedFunction.positionLinear;
-            speedFunction.speedLinear = 2 * speedFunction.positionQuadratic;
-            speedFunction.currentTime = globalTimer;
-            long endTime = System.nanoTime();
-            speedEstimation.accept((speedFunction.positionLinear + 2 * globalTimer * speedFunction.positionQuadratic) * 2 * Math.PI * WHEEL_RADIUS / WHEEL_TICKS_PER_TURN);
+                // position = offset + linear * time + quad * time * time ->
+                // d_position / dt = linear + 2 * quad * time
+                speedFunction.speedOffset = speedFunction.positionLinear;
+                speedFunction.speedLinear = 2 * speedFunction.positionQuadratic;
+                speedFunction.currentTime = globalTimer;
+                long endTime = System.nanoTime();
+                speedEstimation.accept((speedFunction.positionLinear + 2 * globalTimer * speedFunction.positionQuadratic) * 2 * Math.PI * WHEEL_RADIUS / WHEEL_TICKS_PER_TURN);
+            } catch (IllegalArgumentException notInvertible) {
+                speedEstimation.accept(0.0);
+            }
         } else speedEstimation.accept(0.0);
     }
 
