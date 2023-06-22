@@ -57,6 +57,10 @@ public class SimulatorUI {
         double maxAcceleration = 5.7;
 
         var route = new LinkedList<DesiredPose>();
+        route.add(new DesiredPose(0.6, 0.1, 0));
+        route.add(new DesiredPose(0.7, 1.1, 0.25));
+        route.add(new DesiredPose(0.7, 2.1, 0.25));
+        /*
         route.add(new DesiredPose(0.4, 0.1, 0));
         //route.add(new DesiredPose(0.6, 0.1, 0));
         //route.add(new DesiredPose(0.7, 0.2, 0.25));
@@ -65,12 +69,12 @@ public class SimulatorUI {
         //route.add(new DesiredPose(0.6, 0.7, 0.5));
         route.add(new DesiredPose(0.4, 0.7, 0.5));
         route.add(new DesiredPose(0.2, 0.7, 0.5));
-        route.add(new DesiredPose(0.1, 0.6, 0.75));
+        //route.add(new DesiredPose(0.1, 0.6, 0.75));
         //route.add(new DesiredPose(0.1, 0.4, 0.75));
         //route.add(new DesiredPose(0.1, 0.2, 0.75));
         route.add(new DesiredPose(0.1, 0.0, 0.75));
         //route.add(new DesiredPose(10, 0.1, 0));
-
+        */
         var desiredVelocity = new DesiredVelocity();
         var desiredWheelSpeed = new DesiredWheelSpeed();
 
@@ -78,7 +82,7 @@ public class SimulatorUI {
 
         //var routeController = new RouteController(route, desiredVelocity, estimations, controls, maxAcceleration);
         //var routeController = new BezierController(route, desiredVelocity, estimations, controls, maxAcceleration);
-        var routeController = new StepController(route, desiredVelocity, estimations, controls, maxAcceleration);
+        //var routeController = new StepController(route, desiredVelocity, estimations, controls, maxAcceleration);
         var differentialDriver = new DifferentialDriver(desiredVelocity, desiredWheelSpeed, estimations, controls);
         var directSpeedController = new DirectSpeedPIDController(desiredVelocity, desiredWheelSpeed, estimations);
         //var velocityController = new VelocityController(desiredVelocity, desiredWheelSpeed, estimations);
@@ -138,13 +142,13 @@ public class SimulatorUI {
         monitorFrame.setSize(800, 500);
         monitorFrame.setAutoRequestFocus(false);
         monitorFrame.setLocation(1200, 200);
-        monitorFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        monitorFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         monitorFrame.add(new MonitorBoard(trackedState, controls, estimations));
         monitorFrame.setVisible(true);
 
         var simulatorFrame = new JFrame();
         simulatorFrame.setSize(1200, 800);
-        simulatorFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        simulatorFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         simulatorFrame.add(new SimulatorBoard(estimations, route));
         simulatorFrame.setVisible(true);
 
@@ -168,14 +172,13 @@ public class SimulatorUI {
         repaintThread.setDaemon(true);
         repaintThread.start();
 
-        Thread.sleep(500000);
+        Thread.sleep(50000);
         route.clear();
         drawing[0] = false;
-        while(true){
-            controls.velRight = 0.0;
-            controls.velLeft = 0.0;
-            desiredVelocity.speed = 0.0;
-        }
-
+        controls.velRight = 0.0;
+        controls.velLeft = 0.0;
+        desiredVelocity.speed = 0.0;
+        Thread.sleep(100);
+        monitorFrame.dispose();
     }
 }

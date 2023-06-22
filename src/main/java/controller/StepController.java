@@ -60,7 +60,7 @@ public class StepController implements ControllerFunction {
         var distanceToNext = sqrt(dx * dx + dy * dy);
 
         // If the next² point is closer than the next point, remove the next point
-        if ((distanceToNext2 < distanceBetweenNext && distanceToNext < 0.05) || distanceToNext < 0.02) {
+        if ((distanceToNext2 < distanceBetweenNext && distanceToNext < 0.07) || distanceToNext < 0.05) {
             route.remove(0);
             return;
         }

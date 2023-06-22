@@ -37,8 +37,8 @@ public class JoystickClientConnection {
                 var input = new DataInputStream(socket.getInputStream());
                 var output = new DataOutputStream(socket.getOutputStream());
 
-                double lastCommandLeft = leftMotorControl.getAsDouble();
-                double lastCommandRight = rightMotorControl.getAsDouble();
+                double lastCommandLeft = Double.NaN;
+                double lastCommandRight = Double.NaN;
 
                 while (true) {
                     boolean didSomething = false;

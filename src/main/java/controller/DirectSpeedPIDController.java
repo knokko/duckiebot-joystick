@@ -9,6 +9,8 @@ import controller.updater.ControllerFunction;
 
 import static controller.util.DuckieWheels.DISTANCE_BETWEEN_WHEELS;
 
+import java.util.LinkedList;
+
 public class DirectSpeedPIDController implements ControllerFunction {
 
     private final DesiredVelocity desiredVelocity;
@@ -24,6 +26,7 @@ public class DirectSpeedPIDController implements ControllerFunction {
     private double setPoint = 0;
     private double rampingSpeed = 1;
 
+    private LinkedList<Double> errorList = new LinkedList<>();
 
     public DirectSpeedPIDController(DesiredVelocity desiredVelocity, DesiredWheelSpeed desiredWheelSpeed, DuckieEstimations estimations) {
         this.desiredVelocity = desiredVelocity;
@@ -35,16 +38,25 @@ public class DirectSpeedPIDController implements ControllerFunction {
     public void update(double deltaTime) {
         // Setpoint ramping
         double speed = (estimations.leftSpeed + estimations.rightSpeed)/2;
-        if(Math.abs(speed) < 0.01){
-            speed = 0;
+
+        if(Math.abs(desiredVelocity.speed) < 0.01 && Math.abs(speed) < 0.2){
+            desiredWheelSpeed.rightSpeed = 0;
+            desiredWheelSpeed.leftSpeed = 0;
+            return;
         }
 
         setPoint += Math.min(desiredVelocity.speed - setPoint, rampingSpeed * deltaTime);
         double errorSpeed = setPoint - speed;
 
+        // Window the error list
+        if(errorList.size() > 1000){
+            errorList.removeFirst();
+        }
+
         // Calculate PID
         errorP = errorSpeed;
-        errorI += errorSpeed * deltaTime;
+        errorList.add(errorSpeed * deltaTime);
+        errorI = errorList.stream().mapToDouble(Double::doubleValue).sum();
         errorD = (errorSpeed - errorP) / deltaTime;
 
         double Kp = 0.75;
