@@ -57,31 +57,27 @@ public class SimulatorUI {
         double maxAcceleration = 5.7;
 
         var route = new LinkedList<DesiredPose>();
-        route.add(new DesiredPose(0.6, 0.1, 0));
-        route.add(new DesiredPose(0.7, 1.1, 0.25));
-        route.add(new DesiredPose(0.7, 2.1, 0.25));
-        /*
         route.add(new DesiredPose(0.4, 0.1, 0));
-        //route.add(new DesiredPose(0.6, 0.1, 0));
-        //route.add(new DesiredPose(0.7, 0.2, 0.25));
-        //route.add(new DesiredPose(0.7, 0.4, 0.25));
-        //route.add(new DesiredPose(0.7, 0.6, 0.25));
-        //route.add(new DesiredPose(0.6, 0.7, 0.5));
+        route.add(new DesiredPose(0.6, 0.1, 0));
+        route.add(new DesiredPose(0.7, 0.2, 0.25));
+        route.add(new DesiredPose(0.7, 0.4, 0.25));
+        route.add(new DesiredPose(0.7, 0.6, 0.25));
+        route.add(new DesiredPose(0.6, 0.7, 0.5));
         route.add(new DesiredPose(0.4, 0.7, 0.5));
         route.add(new DesiredPose(0.2, 0.7, 0.5));
-        //route.add(new DesiredPose(0.1, 0.6, 0.75));
-        //route.add(new DesiredPose(0.1, 0.4, 0.75));
-        //route.add(new DesiredPose(0.1, 0.2, 0.75));
+        route.add(new DesiredPose(0.1, 0.6, 0.75));
+        route.add(new DesiredPose(0.1, 0.4, 0.75));
+        route.add(new DesiredPose(0.1, 0.2, 0.75));
         route.add(new DesiredPose(0.1, 0.0, 0.75));
-        //route.add(new DesiredPose(10, 0.1, 0));
-        */
+        route.add(new DesiredPose(10, 0.1, 0));
+        
         var desiredVelocity = new DesiredVelocity();
         var desiredWheelSpeed = new DesiredWheelSpeed();
 
         var poseEstimator = new PoseEstimator(trackedState, estimations);
 
         //var routeController = new RouteController(route, desiredVelocity, estimations, controls, maxAcceleration);
-        //var routeController = new BezierController(route, desiredVelocity, estimations, controls, maxAcceleration);
+        var routeController = new BezierController(route, desiredVelocity, estimations, controls, maxAcceleration);
         //var routeController = new StepController(route, desiredVelocity, estimations, controls, maxAcceleration);
         var differentialDriver = new DifferentialDriver(desiredVelocity, desiredWheelSpeed, estimations, controls);
         var directSpeedController = new DirectSpeedPIDController(desiredVelocity, desiredWheelSpeed, estimations);

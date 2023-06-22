@@ -1,13 +1,9 @@
 package controller;
-import state.DuckieControls;
-
 
 import controller.desired.DesiredVelocity;
 import controller.desired.DesiredWheelSpeed;
 import controller.estimation.DuckieEstimations;
 import controller.updater.ControllerFunction;
-
-import static controller.util.DuckieWheels.DISTANCE_BETWEEN_WHEELS;
 
 import java.util.LinkedList;
 
