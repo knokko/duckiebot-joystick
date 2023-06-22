@@ -37,7 +37,7 @@ public class StepController implements ControllerFunction {
             return;
         }
 
-        double speed = 0.2; // 0.2 worked
+        double speed = 0.5; // 0.2 worked
         
         // Distance to next²
         var destinationPose     = route.get(0);

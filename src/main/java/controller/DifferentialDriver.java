@@ -43,28 +43,24 @@ public class DifferentialDriver implements ControllerFunction {
         if (errorAngle > 0.5) errorAngle -= 1;
         if (errorAngle < -0.5) errorAngle += 1;
 
-        double turnTime = 0.5;//desiredVelocity.turnTime;
-        double extraDistanceRight = Math.PI * DISTANCE_BETWEEN_WHEELS * errorAngle;
-        double angleCorrection = extraDistanceRight / turnTime; // Should be PID controlled
-
-        double desiredSpeed = desiredVelocity.speed;
-
         // Calculate PID
         errorP = errorAngle;
         errorI += errorAngle * deltaTime;
         errorD = (errorAngle - errorP) / deltaTime;
 
-        double Kp = 1;
+        double Kp = 0.5;
         double Ki = 0.3;
         double Kd = 0.05;
 
-        angleCorrection = Kp * errorP + Ki * errorI + Kd * errorD;
+        double angleCorrection = Kp * errorP + Ki * errorI + Kd * errorD;
 
         // TODO Ensure that this stays in range [-maxSpeed, maxSpeed]
-        desiredWheelSpeed.leftSpeed = desiredSpeed - angleCorrection;
-        desiredWheelSpeed.rightSpeed = desiredSpeed + angleCorrection;
+        desiredWheelSpeed.leftSpeed -= angleCorrection;
+        desiredWheelSpeed.rightSpeed += angleCorrection;
 
-        controls.velLeft = desiredWheelSpeed.leftSpeed;
-        controls.velRight = desiredWheelSpeed.rightSpeed;
+        if(desiredWheelSpeed.leftSpeed > 0 && desiredWheelSpeed.rightSpeed > 0){
+            controls.velLeft = desiredWheelSpeed.leftSpeed;
+            controls.velRight = desiredWheelSpeed.rightSpeed;
+        }
     }
 }

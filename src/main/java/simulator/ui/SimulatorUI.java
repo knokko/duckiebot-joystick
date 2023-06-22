@@ -24,7 +24,7 @@ import static java.lang.Thread.sleep;
 
 public class SimulatorUI {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         boolean useDuckiebot = args.length > 0 && args[0].equals("duckie");
         DuckieEstimations estimations;
         DuckieControls controls;
@@ -69,6 +69,7 @@ public class SimulatorUI {
         //route.add(new DesiredPose(0.1, 0.4, 0.75));
         //route.add(new DesiredPose(0.1, 0.2, 0.75));
         route.add(new DesiredPose(0.1, 0.0, 0.75));
+        //route.add(new DesiredPose(10, 0.1, 0));
 
         var desiredVelocity = new DesiredVelocity();
         var desiredWheelSpeed = new DesiredWheelSpeed();
@@ -79,6 +80,7 @@ public class SimulatorUI {
         //var routeController = new BezierController(route, desiredVelocity, estimations, controls, maxAcceleration);
         var routeController = new StepController(route, desiredVelocity, estimations, controls, maxAcceleration);
         var differentialDriver = new DifferentialDriver(desiredVelocity, desiredWheelSpeed, estimations, controls);
+        var directSpeedController = new DirectSpeedPIDController(desiredVelocity, desiredWheelSpeed, estimations);
         //var velocityController = new VelocityController(desiredVelocity, desiredWheelSpeed, estimations);
 
         // Input voor PID desiredVelocity ->  controls.velLeft 
@@ -106,16 +108,17 @@ public class SimulatorUI {
                 pGain, iGain, dGain, estimations.rightPID, () -> estimations.rightSpeed,
                 () -> desiredWheelSpeed.rightSpeed, rightAccelerationLimiter::setControlInput,
                 () -> controls.velRight, estimations.rightTransfer
-        );
+        );*/
         var leftSpeedEstimator = new SpeedEstimator(
                 () -> trackedState.leftWheelEncoder, newSpeed -> estimations.leftSpeed = newSpeed, estimations.leftSpeedFunction
         );
         var rightSpeedEstimator = new SpeedEstimator(
                 () -> trackedState.rightWheelEncoder, newSpeed -> estimations.rightSpeed = newSpeed, estimations.rightSpeedFunction
-        );*/
+        );
 
         var updater = new ControllerUpdater();
 
+        desiredVelocity.speed = 0.01;
         updater.addController(updateFunction, 1);
         updater.addController(routeController, 5);
         //updater.addController(leftPidController, 5);
@@ -123,9 +126,10 @@ public class SimulatorUI {
         //updater.addController(leftAccelerationLimiter, 1);
         //updater.addController(rightAccelerationLimiter, 1);
         //updater.addController(velocityController, 9);
+        updater.addController(directSpeedController, 1);
         updater.addController(differentialDriver, 1);
-        //updater.addController(leftSpeedEstimator, 5);
-        //updater.addController(rightSpeedEstimator, 5);
+        updater.addController(leftSpeedEstimator, 5);
+        updater.addController(rightSpeedEstimator, 5);
         updater.addController(poseEstimator, 3);
         //updater.addController(leftSpeedFunctionEstimator, 1);
         //updater.addController(rightSpeedFunctionEstimator, 1);
@@ -148,9 +152,10 @@ public class SimulatorUI {
         updateThread.setDaemon(true);
         updateThread.start();
 
+        boolean[] drawing = {true};
         Thread repaintThread = new Thread(() -> {
             try {
-                while (true) {
+                while (drawing[0]) {
                     //noinspection BusyWait
                     sleep(20);
                     SwingUtilities.invokeLater(simulatorFrame::repaint);
@@ -162,5 +167,15 @@ public class SimulatorUI {
         });
         repaintThread.setDaemon(true);
         repaintThread.start();
+
+        Thread.sleep(500000);
+        route.clear();
+        drawing[0] = false;
+        while(true){
+            controls.velRight = 0.0;
+            controls.velLeft = 0.0;
+            desiredVelocity.speed = 0.0;
+        }
+
     }
 }
