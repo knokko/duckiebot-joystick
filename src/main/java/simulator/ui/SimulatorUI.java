@@ -45,7 +45,7 @@ public class SimulatorUI {
             connection.start();
         } else {
             var simulator = new Simulator(
-                    Terrain.IDEAL, 0.08, 0.08, 0.0, 0.0
+                    Terrain.IDEAL, 0.0, 0.0, 0.0, 0.0
             );
             estimations = simulator.estimations;
             controls = simulator.controls;

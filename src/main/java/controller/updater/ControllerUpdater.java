@@ -1,15 +1,7 @@
 package controller.updater;
 
-import controller.AccelerationLimiter;
-import controller.BezierController;
-import controller.SpeedPIDController;
-import controller.VelocityController;
-import controller.estimation.PoseEstimator;
-import controller.estimation.SpeedEstimator;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.DoubleConsumer;
 
 import static java.lang.Thread.sleep;
 
@@ -26,11 +18,13 @@ public class ControllerUpdater {
             long updateCounter = 0;
 
             long startTime = System.currentTimeMillis();
+            //noinspection InfiniteLoopStatement
             while (true) {
 
                 while (true) {
                     long currentTime = System.currentTimeMillis();
                     if (updateCounter < (currentTime - startTime)) break;
+                    //noinspection BusyWait
                     sleep(1);
                 }
 
