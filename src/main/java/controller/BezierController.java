@@ -37,13 +37,13 @@ public class BezierController implements ControllerFunction {
             return;
         }
 
-        double speed = 0.2; // 0.2 worked
+        double speed = 0.3; // 0.2 worked
         var destinationPose = route.get(0);
         var dx = destinationPose.x - estimations.x;
         var dy = destinationPose.y - estimations.y;
         var distance = sqrt(dx * dx + dy * dy);
 
-        if (distance * 0.5 / speed < 0.3) {
+        if (distance < 0.06) {
             route.remove(0);
             return;
         }
@@ -78,7 +78,7 @@ public class BezierController implements ControllerFunction {
         double y3 = y4 - 0.5 * distance * sin(destAngleRad);
 
         double destinationTime = distance / speed;
-        double timeStep = 0.5;
+        double timeStep = 0.2;
         double t = timeStep / destinationTime;
 
         double desiredDx = 3 * (1.0 - t) * (1.0 - t) * (x2 - x1) + 6 * (1.0 - t) * t * (x3 - x2) + 3 * t * t * (x4 - x3);

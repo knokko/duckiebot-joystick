@@ -64,7 +64,6 @@ public class DifferentialDriver implements ControllerFunction {
         double angleCorrection = Kp * errorP + Ki * errorI + Kd * errorD;
 
         // Print PID values
-        System.out.printf("P: %.2f, I: %.2f, D: %.2f\n", Kp*errorP, Ki*errorI, Kd*errorD);
 
         // Calculate desired wheel speeds
         if(desiredWheelSpeed.leftSpeed != 0 && desiredWheelSpeed.rightSpeed != 0){

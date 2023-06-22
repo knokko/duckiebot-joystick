@@ -60,6 +60,8 @@ public class DirectSpeedPIDController implements ControllerFunction {
         double Kd = 0.2;
 
         double speedInput = Kp * errorP + Ki * errorI + Kd * errorD;
+        System.out.printf("P: %.2f, I: %.2f, D: %.2f\n", Kp*errorP, Ki*errorI, Kd*errorD);
+        System.out.println("speedInput is " + speedInput);
 
         // TODO Ensure that this stays in range [-maxSpeed, maxSpeed]
         desiredWheelSpeed.leftSpeed = speedInput;

@@ -1,6 +1,7 @@
 package simulator.ui;
 
 import controller.desired.DesiredPose;
+import controller.desired.DesiredVelocity;
 import controller.estimation.DuckieEstimations;
 import simulator.Simulator;
 
@@ -21,11 +22,14 @@ public class SimulatorBoard extends JPanel {
     private static final int SCALE = 5;
 
     private final DuckieEstimations estimations;
+    private final DesiredVelocity desiredVelocity;
     private final Queue<DesiredPose> route;
 
-    public SimulatorBoard(DuckieEstimations estimations, Queue<DesiredPose> route) {
+    public SimulatorBoard(DuckieEstimations estimations, DesiredVelocity desiredVelocity, Queue<DesiredPose> route) {
         this.estimations = estimations;
-        this.route = new LinkedList<>(route);
+        this.desiredVelocity = desiredVelocity;
+        //this.route = new LinkedList<>(route);
+        this.route = route;
     }
 
     private final java.util.List<Point2D.Double> visitedPoints = new ArrayList<>();
@@ -90,6 +94,14 @@ public class SimulatorBoard extends JPanel {
             int radius = (transformRealX(xLeftWheel + WHEEL_RADIUS) - transformRealX(xLeftWheel - WHEEL_RADIUS)) / 2;
             graphics.fillOval(transformRealX(xLeftWheel) - radius, transformRealY(yLeftWheel) - radius, 2 * radius, 2 * radius);
             graphics.fillOval(transformRealX(xRightWheel) - radius, transformRealY(yRightWheel) - radius, 2 * radius, 2 * radius);
+
+            graphics.setColor(Color.YELLOW);
+            graphics.drawLine(
+                    transformRealX(estimations.x),
+                    transformRealY(estimations.y),
+                    transformRealX(estimations.x + 0.1 * cos(desiredVelocity.angle * 2.0 * Math.PI)),
+                    transformRealY(estimations.y + 0.1 * sin(desiredVelocity.angle * 2.0 * Math.PI))
+            );
         }
 
         graphics.setColor(Color.RED);

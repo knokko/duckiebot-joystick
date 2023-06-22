@@ -46,7 +46,7 @@ public class SimulatorUI {
             connection.start();
         } else {
             var simulator = new Simulator(
-                    Terrain.SIMPLE_SLOW, 0.08, 0.08, 0.0, 0.0
+                    Terrain.IDEAL, 0.08, 0.08, 0.0, 0.0
             );
             estimations = simulator.estimations;
             controls = simulator.controls;
@@ -145,7 +145,7 @@ public class SimulatorUI {
         var simulatorFrame = new JFrame();
         simulatorFrame.setSize(1200, 800);
         simulatorFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        simulatorFrame.add(new SimulatorBoard(estimations, route));
+        simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, route));
         simulatorFrame.setVisible(true);
 
         Thread updateThread = new Thread(updater::start);
