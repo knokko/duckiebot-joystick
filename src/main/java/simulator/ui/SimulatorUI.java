@@ -7,7 +7,6 @@ import controller.desired.DesiredWheelSpeed;
 import controller.estimation.DuckieEstimations;
 import controller.estimation.PoseEstimator;
 import controller.estimation.SpeedEstimator;
-import controller.estimation.TransferFunctionEstimator;
 import controller.updater.ControllerFunction;
 import controller.updater.ControllerUpdater;
 import joystick.client.JoystickClientConnection;
@@ -69,46 +68,17 @@ public class SimulatorUI {
         route.add(new DesiredPose(0.1, 0.4, 0.75));
         route.add(new DesiredPose(0.1, 0.2, 0.75));
         route.add(new DesiredPose(0.1, 0.0, 0.75));
-        route.add(new DesiredPose(10, 0.1, 0));
         
         var desiredVelocity = new DesiredVelocity();
         var desiredWheelSpeed = new DesiredWheelSpeed();
 
         var poseEstimator = new PoseEstimator(trackedState, estimations);
 
-        //var routeController = new RouteController(route, desiredVelocity, estimations, controls, maxAcceleration);
         var routeController = new BezierController(route, desiredVelocity, estimations, controls, maxAcceleration);
         //var routeController = new StepController(route, desiredVelocity, estimations, controls, maxAcceleration);
         var differentialDriver = new DifferentialDriver(desiredVelocity, desiredWheelSpeed, estimations, controls);
         var directSpeedController = new DirectSpeedPIDController(desiredVelocity, desiredWheelSpeed, estimations);
-        //var velocityController = new VelocityController(desiredVelocity, desiredWheelSpeed, estimations);
 
-        // Input voor PID desiredVelocity ->  controls.velLeft 
-
-        /*/
-        var leftAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velLeft = signal);
-        var rightAccelerationLimiter = new AccelerationLimiter(maxAcceleration, signal -> controls.velRight = signal);
-
-        var leftSpeedFunctionEstimator = new TransferFunctionEstimator(
-                () -> trackedState.leftWheelControl, () -> estimations.leftSpeed, estimations.leftTransfer
-        );
-        var rightSpeedFunctionEstimator = new TransferFunctionEstimator(
-                () -> trackedState.rightWheelControl, () -> estimations.rightSpeed, estimations.rightTransfer
-        );
-
-        double pGain = 0.020;
-        double iGain = 0.000;
-        double dGain = 0.005;
-        var leftPidController = new SpeedPIDController(
-                pGain, iGain, dGain, estimations.leftPID, () -> estimations.leftSpeed,
-                () -> desiredWheelSpeed.leftSpeed, leftAccelerationLimiter::setControlInput,
-                () -> controls.velLeft, estimations.leftTransfer
-        );
-        var rightPidController = new SpeedPIDController(
-                pGain, iGain, dGain, estimations.rightPID, () -> estimations.rightSpeed,
-                () -> desiredWheelSpeed.rightSpeed, rightAccelerationLimiter::setControlInput,
-                () -> controls.velRight, estimations.rightTransfer
-        );*/
         var leftSpeedEstimator = new SpeedEstimator(
                 () -> trackedState.leftWheelEncoder, newSpeed -> estimations.leftSpeed = newSpeed, estimations.leftSpeedFunction
         );
@@ -121,18 +91,11 @@ public class SimulatorUI {
         desiredVelocity.speed = 0.01;
         updater.addController(updateFunction, 1);
         updater.addController(routeController, 5);
-        //updater.addController(leftPidController, 5);
-        //updater.addController(rightPidController, 5);
-        //updater.addController(leftAccelerationLimiter, 1);
-        //updater.addController(rightAccelerationLimiter, 1);
-        //updater.addController(velocityController, 9);
         updater.addController(directSpeedController, 1);
         updater.addController(differentialDriver, 1);
         updater.addController(leftSpeedEstimator, 5);
         updater.addController(rightSpeedEstimator, 5);
         updater.addController(poseEstimator, 3);
-        //updater.addController(leftSpeedFunctionEstimator, 1);
-        //updater.addController(rightSpeedFunctionEstimator, 1);
 
         var monitorFrame = new JFrame();
         monitorFrame.setSize(800, 500);
@@ -168,7 +131,7 @@ public class SimulatorUI {
         repaintThread.setDaemon(true);
         repaintThread.start();
 
-        Thread.sleep(50000);
+        Thread.sleep(30000);
         route.clear();
         drawing[0] = false;
         controls.velRight = 0.0;
