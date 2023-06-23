@@ -38,6 +38,8 @@ public class DirectSpeedPIDController implements ControllerFunction {
         if(Math.abs(desiredVelocity.speed) < 0.01 && Math.abs(speed) < 0.2){
             desiredWheelSpeed.rightSpeed = 0;
             desiredWheelSpeed.leftSpeed = 0;
+            errorList.clear();
+            setPoint = 0.0;
             return;
         }
 
@@ -60,8 +62,6 @@ public class DirectSpeedPIDController implements ControllerFunction {
         double Kd = 0.2;
 
         double speedInput = Kp * errorP + Ki * errorI + Kd * errorD;
-        System.out.printf("P: %.2f, I: %.2f, D: %.2f\n", Kp*errorP, Ki*errorI, Kd*errorD);
-        System.out.println("speedInput is " + speedInput);
 
         // TODO Ensure that this stays in range [-maxSpeed, maxSpeed]
         desiredWheelSpeed.leftSpeed = speedInput;
