@@ -12,10 +12,13 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import static controller.desired.DesiredPose.*;
 import static controller.util.DuckieWheels.DISTANCE_BETWEEN_WHEELS;
 import static controller.util.DuckieWheels.WHEEL_RADIUS;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
+import static planner.RoutePlanner.simpleCos;
+import static planner.RoutePlanner.simpleSin;
 
 public class SimulatorBoard extends JPanel {
 
@@ -112,10 +115,25 @@ public class SimulatorBoard extends JPanel {
         var newPoint = new Point2D.Double(estimations.x, estimations.y);
         if (!visitedPoints.contains(newPoint)) visitedPoints.add(newPoint);
 
-        graphics.setColor(Color.GREEN);
         radius = 5;
         for (var point : route) {
+            int status = point.status.get();
+            if (status == STATUS_UNREAD) {
+                if (point.backward) graphics.setColor(new Color(0, 0, 100));
+                else graphics.setColor(new Color(0, 0, 250));
+            }
+            if (status == STATUS_READ) {
+                if (point.backward) graphics.setColor(new Color(0, 100, 0));
+                else graphics.setColor(new Color(0, 250, 0));
+            }
+            if (status == STATUS_CANCELLED) graphics.setColor(Color.RED);
             graphics.fillOval(transformRealX(point.x) - radius, transformRealY(point.y) - radius, 2 * radius, 2 * radius);
+            graphics.setColor(Color.RED);
+
+            graphics.drawLine(
+                    transformRealX(point.x), transformRealY(point.y),
+                    transformRealX(point.x + 0.03 * simpleCos(point.angle)), transformRealY(point.y + 0.03 * simpleSin(point.angle))
+            );
         }
 
         Toolkit.getDefaultToolkit().sync();

@@ -10,6 +10,10 @@ import controller.estimation.SpeedEstimator;
 import controller.updater.ControllerFunction;
 import controller.updater.ControllerUpdater;
 import joystick.client.JoystickClientConnection;
+import planner.GridPosition;
+import planner.KeyboardPlanner;
+import planner.PlannerConnection;
+import planner.RoutePlanner;
 import simulator.Simulator;
 import simulator.Terrain;
 import state.DuckieControls;
@@ -17,14 +21,25 @@ import state.DuckieState;
 
 import javax.swing.*;
 
-import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.lang.Thread.sleep;
 
 public class SimulatorUI {
 
     public static void main(String[] args) throws InterruptedException {
-        boolean useDuckiebot = args.length > 0 && args[0].equals("duckie");
+        boolean useDuckiebot = args.length > 0 && args[0].contains("duckie");
+        boolean useManualRouteControl = args.length > 0 && args[0].contains("manual");
+
+        KeyboardPlanner keyboardPlanner = null;
+        if (useManualRouteControl) {
+            keyboardPlanner = new KeyboardPlanner();
+            Thread keyboardThread = new Thread(keyboardPlanner::start);
+            keyboardThread.setDaemon(true);
+            keyboardThread.start();
+        }
+
         DuckieEstimations estimations;
         DuckieControls controls;
         DuckieState trackedState;
@@ -53,29 +68,41 @@ public class SimulatorUI {
             updateFunction = simulator;
         }
 
-        double maxAcceleration = 5.7;
-
-        var route = new LinkedList<DesiredPose>();
-        route.add(new DesiredPose(0.4, 0.1, 0));
-        route.add(new DesiredPose(0.6, 0.1, 0));
-        route.add(new DesiredPose(0.7, 0.2, 0.25));
-        route.add(new DesiredPose(0.7, 0.4, 0.25));
-        route.add(new DesiredPose(0.7, 0.6, 0.25));
-        route.add(new DesiredPose(0.6, 0.7, 0.5));
-        route.add(new DesiredPose(0.4, 0.7, 0.5));
-        route.add(new DesiredPose(0.2, 0.7, 0.5));
-        route.add(new DesiredPose(0.1, 0.6, 0.75));
-        route.add(new DesiredPose(0.1, 0.4, 0.75));
-        route.add(new DesiredPose(0.1, 0.2, 0.75));
-        route.add(new DesiredPose(0.1, 0.0, 0.75));
+        var lowLevelRoute = new ConcurrentLinkedQueue<DesiredPose>();
+        var highLevelRoute = new LinkedBlockingQueue<GridPosition>();
+//        lowLevelRoute.add(new DesiredPose(0.4, 0.1, 0, false));
+//        lowLevelRoute.add(new DesiredPose(0.6, 0.1, 0, false));
+//
+//        lowLevelRoute.add(new DesiredPose(0.4, 0.1, 0, true));
+//        lowLevelRoute.add(new DesiredPose(-0.2, 0.1, 0, true));
+//        lowLevelRoute.add(new DesiredPose(-0.3, 0.2, 0.75, true));
+//        lowLevelRoute.add(new DesiredPose(-0.3, 0.4, 0.75, true));
+//        lowLevelRoute.add(new DesiredPose(0.7, 0.2, 0.25));
+//        lowLevelRoute.add(new DesiredPose(0.7, 0.4, 0.25));
+//        lowLevelRoute.add(new DesiredPose(0.7, 0.6, 0.25));
+//        lowLevelRoute.add(new DesiredPose(0.6, 0.7, 0.5));
+//        lowLevelRoute.add(new DesiredPose(0.4, 0.7, 0.5));
+//        lowLevelRoute.add(new DesiredPose(0.2, 0.7, 0.5));
+//        lowLevelRoute.add(new DesiredPose(0.1, 0.6, 0.75));
+//        lowLevelRoute.add(new DesiredPose(0.1, 0.4, 0.75));
+//        lowLevelRoute.add(new DesiredPose(0.1, 0.2, 0.75));
+//        lowLevelRoute.add(new DesiredPose(0.1, 0.0, 0.75));
         
         var desiredVelocity = new DesiredVelocity();
         var desiredWheelSpeed = new DesiredWheelSpeed();
 
+        var routePlanner = new RoutePlanner(highLevelRoute, lowLevelRoute);
+        var routeConnection = new PlannerConnection("localhost", highLevelRoute); // TODO Maybe support more hostnames
+
+        Thread routePlannerThread = new Thread(routePlanner::start);
+        routePlannerThread.setDaemon(true);
+        routePlannerThread.start();
+
+        new Thread(routeConnection::start).start();
+
         var poseEstimator = new PoseEstimator(trackedState, estimations);
 
-        var routeController = new BezierController(route, desiredVelocity, estimations, controls, maxAcceleration);
-        //var routeController = new StepController(route, desiredVelocity, estimations, controls, maxAcceleration);
+        var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
         var differentialDriver = new DifferentialDriver(desiredVelocity, desiredWheelSpeed, estimations, controls);
         var directSpeedController = new DirectSpeedPIDController(desiredVelocity, desiredWheelSpeed, estimations);
 
@@ -88,7 +115,6 @@ public class SimulatorUI {
 
         var updater = new ControllerUpdater();
 
-        desiredVelocity.speed = 0.01;
         updater.addController(updateFunction, 1);
         updater.addController(routeController, 5);
         updater.addController(directSpeedController, 1);
@@ -108,17 +134,19 @@ public class SimulatorUI {
         var simulatorFrame = new JFrame();
         simulatorFrame.setSize(1200, 800);
         simulatorFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, route));
+        simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, lowLevelRoute));
+        if (keyboardPlanner != null) {
+            simulatorFrame.addKeyListener(keyboardPlanner);
+        }
         simulatorFrame.setVisible(true);
 
         Thread updateThread = new Thread(updater::start);
         updateThread.setDaemon(true);
         updateThread.start();
 
-        boolean[] drawing = {true};
         Thread repaintThread = new Thread(() -> {
             try {
-                while (drawing[0]) {
+                while (true) {
                     //noinspection BusyWait
                     sleep(20);
                     SwingUtilities.invokeLater(simulatorFrame::repaint);
@@ -130,14 +158,5 @@ public class SimulatorUI {
         });
         repaintThread.setDaemon(true);
         repaintThread.start();
-
-        Thread.sleep(30000);
-        route.clear();
-        drawing[0] = false;
-        controls.velRight = 0.0;
-        controls.velLeft = 0.0;
-        desiredVelocity.speed = 0.0;
-        Thread.sleep(100);
-        monitorFrame.dispose();
     }
 }
