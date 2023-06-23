@@ -86,22 +86,29 @@ public class RoutePlanner {
                 // If this code is reached, it's too late to turn, so the duckiebot should drive back first
                 double backX = centerX(previousGridPose);
                 double backY = centerY(previousGridPose);
-                double frontX = centerX(previousGridPose);
-                double frontY = centerY(previousGridPose);
 
                 if (currentPose.backward) {
-                    backX += 0.05 * simpleCos(currentGridPose.angle);
-                    backY += 0.05 * simpleSin(currentGridPose.angle);
-                    frontX -= 0.1 * simpleCos(currentGridPose.angle);
-                    frontY -= 0.1 * simpleSin(currentGridPose.angle);
+                    backX += 0.03 * simpleCos(currentGridPose.angle);
+                    backY += 0.03 * simpleSin(currentGridPose.angle);
                 } else {
-                    frontX += 0.1 * simpleCos(currentGridPose.angle);
-                    frontY += 0.1 * simpleSin(currentGridPose.angle);
+                    backX += 0.06 * simpleCos(currentGridPose.angle);
+                    backY += 0.06 * simpleSin(currentGridPose.angle);
                 }
 
                 lowLevelRoute.add(new DesiredPose(backX, backY, currentPose.angle, !currentPose.backward));
-                lowLevelRoute.add(new DesiredPose(frontX, frontY, currentPose.angle, currentPose.backward));
             }
+
+            double frontX = centerX(previousGridPose);
+            double frontY = centerY(previousGridPose);
+            if (currentPose.backward) {
+                frontX -= 0.1 * simpleCos(currentGridPose.angle);
+                frontY -= 0.1 * simpleSin(currentGridPose.angle);
+            } else {
+                frontX += 0.1 * simpleCos(currentGridPose.angle);
+                frontY += 0.1 * simpleSin(currentGridPose.angle);
+            }
+
+            lowLevelRoute.add(new DesiredPose(frontX, frontY, currentPose.angle, currentPose.backward));
 
             double finalAngle = desiredAngle;
             if (currentPose.backward) {
