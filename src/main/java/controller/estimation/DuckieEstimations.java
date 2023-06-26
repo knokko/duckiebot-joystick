@@ -1,10 +1,12 @@
 package controller.estimation;
 
+import static controller.util.DuckieWheels.GRID_SIZE;
+
 public class DuckieEstimations {
     /**
      * The (x, y) coordinates relative to the origin (starting point), in meters
      */
-    public volatile double x = 0.16, y = 0.1;
+    public volatile double x = 0.5 * GRID_SIZE + 0.03, y = 0.5 * GRID_SIZE;
     /**
      * The estimated speed of the left and right wheel, in meters per second
      */

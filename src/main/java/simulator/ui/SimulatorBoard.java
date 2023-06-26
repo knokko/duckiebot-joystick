@@ -13,8 +13,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import static controller.desired.DesiredPose.*;
-import static controller.util.DuckieWheels.DISTANCE_BETWEEN_WHEELS;
-import static controller.util.DuckieWheels.WHEEL_RADIUS;
+import static controller.util.DuckieWheels.*;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import static planner.RoutePlanner.simpleCos;
@@ -22,7 +21,7 @@ import static planner.RoutePlanner.simpleSin;
 
 public class SimulatorBoard extends JPanel {
 
-    private static final int SCALE = 5;
+    private static final int SCALE = 3;
 
     private final DuckieEstimations estimations;
     private final DesiredVelocity desiredVelocity;
@@ -49,10 +48,12 @@ public class SimulatorBoard extends JPanel {
 
         Color gridColor = Color.GRAY;
         graphics.setColor(gridColor);
-        for (int x = offsetX - 400 * SCALE; x <= offsetX + 400 * SCALE; x += 20 * SCALE) {
+        for (int rawX = -20; rawX <= 20; rawX++) {
+            int x = (int) Math.round(offsetX + rawX * 100 * GRID_SIZE * SCALE);
             graphics.drawLine(x, 0, x, getHeight());
         }
-        for (int y = offsetY - 400 * SCALE; y <= offsetY + 400 * SCALE; y += 20 * SCALE) {
+        for (int rawY = -20; rawY <= 20; rawY++) {
+            int y = (int) Math.round(offsetY - rawY * 100 * GRID_SIZE * SCALE);
             graphics.drawLine(0, y, getWidth(), y);
         }
 

@@ -7,6 +7,7 @@ import java.util.concurrent.BlockingQueue;
 
 import static controller.desired.DesiredPose.STATUS_CANCELLED;
 import static controller.desired.DesiredPose.STATUS_UNREAD;
+import static controller.util.DuckieWheels.GRID_SIZE;
 
 public class RoutePlanner {
 
@@ -25,18 +26,18 @@ public class RoutePlanner {
     }
 
     private static double centerX(GridPose pose) {
-        return 0.2 * pose.x + 0.1;
+        return GRID_SIZE * (pose.x + 0.5);
     }
 
     private static double centerY(GridPose pose) {
-        return 0.2 * pose.y + 0.1;
+        return GRID_SIZE * (pose.y + 0.5);
     }
 
     private final BlockingQueue<GridPosition> highLevelRoute;
     private final Queue<DesiredPose> lowLevelRoute;
 
     private GridPose currentGridPose = new GridPose(0, 0, 0.0), previousGridPose;
-    private DesiredPose currentPose = new DesiredPose(0.16, 0.1, 0.0, false), previousPose;
+    private DesiredPose currentPose = new DesiredPose(0.8 * GRID_SIZE, GRID_SIZE * 0.5, 0.0, false), previousPose;
 
     public RoutePlanner(BlockingQueue<GridPosition> highLevelRoute, Queue<DesiredPose> lowLevelRoute) {
         this.highLevelRoute = highLevelRoute;
@@ -54,10 +55,10 @@ public class RoutePlanner {
             angle += 0.5;
             if (angle >= 1.0) angle -= 1.0;
         }
-        double offset = backward ? -0.01 : 0.06;
+        double offset = backward ? -0.05 * GRID_SIZE : 0.3 * GRID_SIZE;
         addLowLevel(new DesiredPose(
-                (0.2 * x + 0.1) + offset * simpleCos(angle),
-                (0.2 * y + 0.1) + offset * simpleSin(angle),
+                GRID_SIZE * (x + 0.5) + offset * simpleCos(angle),
+                GRID_SIZE * (y + 0.5) + offset * simpleSin(angle),
                 angle,
                 backward
         ));
@@ -88,11 +89,11 @@ public class RoutePlanner {
                 double backY = centerY(previousGridPose);
 
                 if (currentPose.backward) {
-                    backX += 0.03 * simpleCos(currentGridPose.angle);
-                    backY += 0.03 * simpleSin(currentGridPose.angle);
+                    backX += 0.15 * GRID_SIZE * simpleCos(currentGridPose.angle);
+                    backY += 0.15 * GRID_SIZE * simpleSin(currentGridPose.angle);
                 } else {
-                    backX += 0.06 * simpleCos(currentGridPose.angle);
-                    backY += 0.06 * simpleSin(currentGridPose.angle);
+                    backX += 0.3 * GRID_SIZE * simpleCos(currentGridPose.angle);
+                    backY += 0.3 * GRID_SIZE * simpleSin(currentGridPose.angle);
                 }
 
                 lowLevelRoute.add(new DesiredPose(backX, backY, currentPose.angle, !currentPose.backward));
@@ -101,11 +102,11 @@ public class RoutePlanner {
             double frontX = centerX(previousGridPose);
             double frontY = centerY(previousGridPose);
             if (currentPose.backward) {
-                frontX -= 0.1 * simpleCos(currentGridPose.angle);
-                frontY -= 0.1 * simpleSin(currentGridPose.angle);
+                frontX -= 0.5 * GRID_SIZE * simpleCos(currentGridPose.angle);
+                frontY -= 0.5 * GRID_SIZE * simpleSin(currentGridPose.angle);
             } else {
-                frontX += 0.1 * simpleCos(currentGridPose.angle);
-                frontY += 0.1 * simpleSin(currentGridPose.angle);
+                frontX += 0.5 * GRID_SIZE * simpleCos(currentGridPose.angle);
+                frontY += 0.5 * GRID_SIZE * simpleSin(currentGridPose.angle);
             }
 
             lowLevelRoute.add(new DesiredPose(frontX, frontY, currentPose.angle, currentPose.backward));
@@ -123,8 +124,8 @@ public class RoutePlanner {
             );
 
             lowLevelRoute.add(new DesiredPose(
-                    centerX(newPose) - 0.1 * simpleCos(desiredAngle),
-                    centerY(newPose) - 0.1 * simpleSin(desiredAngle),
+                    centerX(newPose) - 0.5 * GRID_SIZE * simpleCos(desiredAngle),
+                    centerY(newPose) - 0.5 * GRID_SIZE * simpleSin(desiredAngle),
                     finalAngle, currentPose.backward
             ));
             addLowLevel(newPose.x, newPose.y, desiredAngle, currentPose.backward);
@@ -135,8 +136,8 @@ public class RoutePlanner {
                     currentGridPose.angle
             );
             addLowLevel(new DesiredPose(
-                    centerX(newPose) - 0.01 * simpleCos(currentGridPose.angle),
-                    centerY(newPose) - 0.01 * simpleSin(currentGridPose.angle),
+                    centerX(newPose) - 0.05 * GRID_SIZE * simpleCos(currentGridPose.angle),
+                    centerY(newPose) - 0.05 * GRID_SIZE * simpleSin(currentGridPose.angle),
                     currentGridPose.angle,
                     true
             ));

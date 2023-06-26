@@ -1,15 +1,17 @@
 package state;
 
+import static controller.util.DuckieWheels.GRID_SIZE;
+
 public class DuckiePose {
 
     /**
      * x-coordinate relative to the origin (starting point), in meters
      */
-    public volatile double x = 0.12;
+    public volatile double x = 0.5 * GRID_SIZE + 0.03;
     /**
      * y-coordinate relative to the origin (starting point), in meters
      */
-    public volatile double y = 0.1;
+    public volatile double y = 0.5 * GRID_SIZE;
     /**
      * velocity in the x-direction, in meters per second
      */

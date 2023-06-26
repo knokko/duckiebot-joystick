@@ -7,4 +7,6 @@ public class DuckieWheels {
     public static final double WHEEL_RADIUS = 0.0325;
 
     public static final double WHEEL_CIRCUMFERENCE = WHEEL_RADIUS * 2.0 * Math.PI;
+
+    public static final double GRID_SIZE = 0.3;
 }
