@@ -59,7 +59,6 @@ public class JoystickClientConnection {
                         output.writeFloat((float) commandLeft);
                         output.writeFloat((float) commandRight);
                         output.flush();
-                        //System.out.printf("Sent (%.2f, %.2f)\n", commandLeft, commandRight);
                         lastCommandLeft = commandLeft;
                         lastCommandRight = commandRight;
                         didSomething = true;

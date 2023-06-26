@@ -9,6 +9,8 @@ import controller.updater.ControllerFunction;
 
 import java.util.LinkedList;
 
+import static java.lang.Math.abs;
+
 public class DifferentialDriver implements ControllerFunction {
 
     private final DesiredVelocity desiredVelocity;
@@ -23,7 +25,6 @@ public class DifferentialDriver implements ControllerFunction {
 
     // Ramping parameters
     private double setPoint = 0;
-    private double rampingSpeed = 0.5;
 
     private LinkedList<Double> errorList = new LinkedList<>();
 
@@ -44,7 +45,9 @@ public class DifferentialDriver implements ControllerFunction {
         if (errorAngle > 0.5) errorAngle -= 1;
         if (errorAngle < -0.5) errorAngle += 1;
 
-        setPoint += Math.signum(errorAngle - setPoint)*Math.min(Math.abs(errorAngle - setPoint), rampingSpeed * deltaTime);
+        double rampingSpeed = 0.9 - 0.75 * (abs(estimations.leftSpeed) + abs(estimations.rightSpeed)) * 0.5;
+
+        setPoint += Math.signum(errorAngle - setPoint)*Math.min(abs(errorAngle - setPoint), rampingSpeed * deltaTime);
 
         // Window the error list
         if(errorList.size() > 10000){
@@ -52,26 +55,36 @@ public class DifferentialDriver implements ControllerFunction {
         }
 
         // Calculate PID
-        errorP = setPoint;
-        errorList.add(setPoint * deltaTime);
-        errorI = errorList.stream().mapToDouble(Double::doubleValue).sum();
-        errorD = (setPoint - errorP) / deltaTime;
+        var error = setPoint - estimations.angle;
+        if (error > 0.5) error -= 1.0;
+        if (error < -0.5) error += 1.0;
 
-        double Kp = 1.9;
-        double Ki = 0.05;
-        double Kd = 0.275;
+        errorP = error;
+        errorList.add(error * deltaTime);
+        errorI = errorList.stream().mapToDouble(Double::doubleValue).sum();
+        errorD = error / deltaTime;
+
+        double Kp = 1.1;
+        double Ki = 0.00;
+        double Kd = 0.00000;
+
 
         double angleCorrection = Kp * errorP + Ki * errorI + Kd * errorD;
+        System.out.printf("P: %.2f, I: %.2f, D: %.2f errD: %.2f\n", Kp*errorP, Ki*errorI, Kd*errorD, errorD);
 
         // Print PID values
 
+
         // Calculate desired wheel speeds
-        if(desiredWheelSpeed.leftSpeed != 0 && desiredWheelSpeed.rightSpeed != 0){
-            desiredWheelSpeed.leftSpeed -= angleCorrection;
-            desiredWheelSpeed.rightSpeed += angleCorrection;
+
+        double finalLeftSpeed = desiredWheelSpeed.leftSpeed;
+        double finalRightSpeed = desiredWheelSpeed.rightSpeed;
+        if(finalLeftSpeed != 0 && finalRightSpeed != 0){
+            finalLeftSpeed -= angleCorrection;
+            finalRightSpeed += angleCorrection;
         }
 
-        controls.velLeft = desiredWheelSpeed.leftSpeed;
-        controls.velRight = desiredWheelSpeed.rightSpeed;
+        controls.velLeft = finalLeftSpeed;
+        controls.velRight = finalRightSpeed;
     }
 }

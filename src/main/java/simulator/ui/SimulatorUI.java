@@ -21,9 +21,11 @@ import state.DuckieState;
 
 import javax.swing.*;
 
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static controller.util.DuckieWheels.GRID_SIZE;
 import static java.lang.Thread.sleep;
 
 public class SimulatorUI {
@@ -68,10 +70,13 @@ public class SimulatorUI {
             updateFunction = simulator;
         }
 
-        var lowLevelRoute = new ConcurrentLinkedQueue<DesiredPose>();
+        //var lowLevelRoute = new ConcurrentLinkedQueue<DesiredPose>();
+        var lowLevelRoute = new LinkedList<DesiredPose>();
         var highLevelRoute = new LinkedBlockingQueue<GridPosition>();
-//        lowLevelRoute.add(new DesiredPose(0.4, 0.1, 0, false));
-//        lowLevelRoute.add(new DesiredPose(0.6, 0.1, 0, false));
+        lowLevelRoute.add(new DesiredPose(0.4, 0.5 * GRID_SIZE, 0, false));
+        lowLevelRoute.add(new DesiredPose(0.95, 5 * GRID_SIZE, 0.25, false));
+//        lowLevelRoute.add(new DesiredPose(0.5, 0.5, 0.25, false));
+//        lowLevelRoute.add(new DesiredPose(0.5, 0.9, 0.25, false));
 //
 //        lowLevelRoute.add(new DesiredPose(0.4, 0.1, 0, true));
 //        lowLevelRoute.add(new DesiredPose(-0.2, 0.1, 0, true));
@@ -102,7 +107,8 @@ public class SimulatorUI {
 
         var poseEstimator = new PoseEstimator(trackedState, estimations);
 
-        var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
+        //var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
+        var routeController = new StepController(lowLevelRoute, desiredVelocity, estimations, controls, 5.0);
         var differentialDriver = new DifferentialDriver(desiredVelocity, desiredWheelSpeed, estimations, controls);
         var directSpeedController = new DirectSpeedPIDController(desiredVelocity, desiredWheelSpeed, estimations);
 
@@ -128,7 +134,7 @@ public class SimulatorUI {
         monitorFrame.setAutoRequestFocus(false);
         monitorFrame.setLocation(1200, 200);
         monitorFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        monitorFrame.add(new MonitorBoard(trackedState, controls, estimations));
+        monitorFrame.add(new MonitorBoard(trackedState, controls, estimations, desiredWheelSpeed));
         monitorFrame.setVisible(true);
 
         var simulatorFrame = new JFrame();

@@ -80,7 +80,7 @@ public class StepController implements ControllerFunction {
             }
         }
 
-        desiredVelocity.angle = atan2(dy, dx) / (2 * Math.PI);
+        desiredVelocity.angle = destinationPose.angle; //atan2(dy, dx) / (2 * Math.PI);
         desiredVelocity.speed = speed;
         desiredVelocity.turnTime = 0;
     }

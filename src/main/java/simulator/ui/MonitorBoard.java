@@ -1,5 +1,6 @@
 package simulator.ui;
 
+import controller.desired.DesiredWheelSpeed;
 import controller.estimation.DuckieEstimations;
 import state.DuckieControls;
 import state.DuckieState;
@@ -19,7 +20,7 @@ public class MonitorBoard extends JPanel {
 
     private Integer initialLeftTicks, initialRightTicks;
 
-    public MonitorBoard(DuckieState trackedState, DuckieControls controls, DuckieEstimations estimations) {
+    public MonitorBoard(DuckieState trackedState, DuckieControls controls, DuckieEstimations estimations, DesiredWheelSpeed desiredWheelSpeed) {
         graphSequences.add(new GraphSequence("Left control input", new Color(200, 150, 0), () -> controls.velLeft));
         graphSequences.add(new GraphSequence("Right control input", new Color(250, 190, 20), () -> controls.velRight));
         graphSequences.add(new GraphSequence("Left speed", new Color(0, 50, 180), () -> estimations.leftSpeed));
@@ -42,6 +43,7 @@ public class MonitorBoard extends JPanel {
             }
             return 0.0;
         }));
+        //graphSequences.add(new GraphSequence("Desired left speed", Color.MAGENTA, () -> desiredWheelSpeed.leftSpeed));
 
 //        graphSequences.add(new GraphSequence("Left wheel estimator", new Color(200, 0, 200), () -> {
 //            if (initialLeftTicks != null) {
@@ -55,14 +57,14 @@ public class MonitorBoard extends JPanel {
 //                return (speedFunction.speedOffset + speedFunction.currentTime * speedFunction.speedLinear) * WHEEL_RADIUS * 2 * Math.PI / WHEEL_TICKS_PER_TURN;
 //            } else return 0.0;
 //        }));
-        graphSequences.add(new GraphSequence("Left transfer slope", new Color(12, 67, 120), () -> estimations.leftTransfer.slope * 0.6));
-        graphSequences.add(new GraphSequence("Left transfer slope", new Color(22, 77, 140), () -> estimations.rightTransfer.slope * 0.6));
-
-        double pidScalar = 100.0;
-        double pidOffset = -0.5;
-        graphSequences.add(new GraphSequence("Left P", new Color(150, 0, 250), () -> estimations.leftPID.p * pidScalar + pidOffset));
-        graphSequences.add(new GraphSequence("Left I", new Color(250, 0, 150), () -> estimations.leftPID.i * pidScalar + pidOffset));
-        graphSequences.add(new GraphSequence("Left D", new Color(0, 250, 250), () -> estimations.leftPID.d * pidScalar + pidOffset));
+//        graphSequences.add(new GraphSequence("Left transfer slope", new Color(12, 67, 120), () -> estimations.leftTransfer.slope * 0.6));
+//        graphSequences.add(new GraphSequence("Left transfer slope", new Color(22, 77, 140), () -> estimations.rightTransfer.slope * 0.6));
+//
+//        double pidScalar = 100.0;
+//        double pidOffset = -0.5;
+//        graphSequences.add(new GraphSequence("Left P", new Color(150, 0, 250), () -> estimations.leftPID.p * pidScalar + pidOffset));
+//        graphSequences.add(new GraphSequence("Left I", new Color(250, 0, 150), () -> estimations.leftPID.i * pidScalar + pidOffset));
+//        graphSequences.add(new GraphSequence("Left D", new Color(0, 250, 250), () -> estimations.leftPID.d * pidScalar + pidOffset));
     }
 
     private static final int GRAPH_WIDTH = 500;

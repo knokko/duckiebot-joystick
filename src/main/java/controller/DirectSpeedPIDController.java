@@ -7,6 +7,8 @@ import controller.updater.ControllerFunction;
 
 import java.util.LinkedList;
 
+import static java.lang.Math.abs;
+
 public class DirectSpeedPIDController implements ControllerFunction {
 
     private final DesiredVelocity desiredVelocity;
@@ -35,7 +37,7 @@ public class DirectSpeedPIDController implements ControllerFunction {
         // Setpoint ramping
         double speed = (estimations.leftSpeed + estimations.rightSpeed)/2;
 
-        if(Math.abs(desiredVelocity.speed) < 0.01 && Math.abs(speed) < 0.2){
+        if(abs(desiredVelocity.speed) < 0.01 && abs(speed) < 0.2){
             desiredWheelSpeed.rightSpeed = 0;
             desiredWheelSpeed.leftSpeed = 0;
             errorList.clear();
@@ -43,7 +45,7 @@ public class DirectSpeedPIDController implements ControllerFunction {
             return;
         }
 
-        if (desiredVelocity.speed != 0 && speed != 0 && Math.signum(desiredVelocity.speed) != Math.signum(speed)) {
+        if (desiredVelocity.speed != 0 && abs(speed) > 0.1 && Math.signum(desiredVelocity.speed) != Math.signum(speed)) {
             errorList.clear();
             setPoint = 0.0;
         }
