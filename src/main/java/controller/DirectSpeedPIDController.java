@@ -43,6 +43,11 @@ public class DirectSpeedPIDController implements ControllerFunction {
             return;
         }
 
+        if (desiredVelocity.speed != 0 && speed != 0 && Math.signum(desiredVelocity.speed) != Math.signum(speed)) {
+            errorList.clear();
+            setPoint = 0.0;
+        }
+
         setPoint += Math.min(desiredVelocity.speed - setPoint, rampingSpeed * deltaTime);
         double errorSpeed = setPoint - speed;
 
