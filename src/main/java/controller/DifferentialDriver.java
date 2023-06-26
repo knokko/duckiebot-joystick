@@ -58,8 +58,8 @@ public class DifferentialDriver implements ControllerFunction {
         errorD = (setPoint - errorP) / deltaTime;
 
         double Kp = 1.9;
-        double Ki = 0.00;
-        double Kd = 0.1;
+        double Ki = 0.05;
+        double Kd = 0.275;
 
         double angleCorrection = Kp * errorP + Ki * errorI + Kd * errorD;
 
