@@ -16,7 +16,7 @@ public class JoystickBoard extends JPanel implements KeyListener, MouseListener,
 
     private double joystickX, joystickY;
 
-    private int lastLeftEncoder, lastRightEncoder;
+    private Integer lastLeftEncoder, lastRightEncoder;
     private double leftMotor, rightMotor;
 
     public JoystickBoard(Supplier<Insets> rootInsets, DuckieState duckieState) {
@@ -47,8 +47,14 @@ public class JoystickBoard extends JPanel implements KeyListener, MouseListener,
 
     @Override
     public void paint(Graphics graphics) {
-        int deltaLeft = 50 * (duckieState.leftWheelEncoder - lastLeftEncoder);
-        int deltaRight = 50 * (duckieState.rightWheelEncoder - lastRightEncoder);
+        Integer leftWheelEncoder = duckieState.leftWheelEncoder;
+        Integer rightWheelEncoder = duckieState.rightWheelEncoder;
+        int deltaLeft = 0;
+        int deltaRight = 0;
+        if (leftWheelEncoder != null && rightWheelEncoder != null && lastLeftEncoder != null && lastRightEncoder != null) {
+            deltaLeft = 50 * (leftWheelEncoder - lastLeftEncoder);
+            deltaRight = 50 * (rightWheelEncoder - lastRightEncoder);
+        }
         int deltaLeftMotor = (int) (300f * leftMotor);
         int deltaRightMotor = (int) (300f * rightMotor);
         graphics.setColor(Color.WHITE);
@@ -113,8 +119,8 @@ public class JoystickBoard extends JPanel implements KeyListener, MouseListener,
                 2 * joystickRadius, 2 * joystickRadius
         );
 
-        lastLeftEncoder = duckieState.leftWheelEncoder;
-        lastRightEncoder = duckieState.rightWheelEncoder;
+        lastLeftEncoder = leftWheelEncoder;
+        lastRightEncoder = rightWheelEncoder;
 
         new Thread(() -> {
             try {
