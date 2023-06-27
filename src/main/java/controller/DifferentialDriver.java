@@ -36,18 +36,22 @@ public class DifferentialDriver implements ControllerFunction {
         this.controls = controls;
     }
 
+    private double smartAngle(double angle) {
+        if (angle > 0.5) return angle - 1;
+        if (angle < -0.5) return angle + 1;
+        return angle;
+    }
+
     @Override
     public void update(double deltaTime) {
+        double rawAngleToGoal = desiredVelocity.angle - estimations.angle;
+        double angleToGoal = smartAngle(rawAngleToGoal);
+
         // Setpoint ramping
-        double errorAngle = desiredVelocity.angle - estimations.angle;
+        //double rampingSpeed = 0.9 - 0.85 * (abs(estimations.leftSpeed) + abs(estimations.rightSpeed)) * 0.5;
+        double rampingSpeed = 0.2;
 
-        // If the error is larger than 0.5 turns, we should rotate the other way instead
-        if (errorAngle > 0.5) errorAngle -= 1;
-        if (errorAngle < -0.5) errorAngle += 1;
-
-        double rampingSpeed = 0.9 - 0.75 * (abs(estimations.leftSpeed) + abs(estimations.rightSpeed)) * 0.5;
-
-        setPoint += Math.signum(errorAngle - setPoint)*Math.min(abs(errorAngle - setPoint), rampingSpeed * deltaTime);
+        setPoint += Math.signum(angleToGoal) * Math.min(abs(smartAngle(desiredVelocity.angle - setPoint)), rampingSpeed * deltaTime);
 
         // Window the error list
         if(errorList.size() > 10000){
@@ -55,16 +59,14 @@ public class DifferentialDriver implements ControllerFunction {
         }
 
         // Calculate PID
-        var error = setPoint - estimations.angle;
-        if (error > 0.5) error -= 1.0;
-        if (error < -0.5) error += 1.0;
+        var error = smartAngle(setPoint - estimations.angle);
 
         errorP = error;
         errorList.add(error * deltaTime);
         errorI = errorList.stream().mapToDouble(Double::doubleValue).sum();
         errorD = error / deltaTime;
 
-        double Kp = 1.1;
+        double Kp = 1.0;
         double Ki = 0.00;
         double Kd = 0.00000;
 
