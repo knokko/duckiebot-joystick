@@ -1,5 +1,7 @@
 package controller.estimation;
 
+import controller.util.Polynomial;
+
 import static controller.util.DuckieWheels.GRID_SIZE;
 
 public class DuckieEstimations {
@@ -20,21 +22,5 @@ public class DuckieEstimations {
      */
     public volatile double leftControlLatency = 0.03, rightControlLatency = 0.03; // TODO Don't hardcode this
 
-    // TODO Remove after testing
-    public final SpeedFunction leftSpeedFunction = new SpeedFunction(), rightSpeedFunction = new SpeedFunction();
-    public final PIDValues leftPID = new PIDValues(), rightPID = new PIDValues();
-    public final TransferFunction leftTransfer = new TransferFunction(), rightTransfer = new TransferFunction();
-
-    public static class SpeedFunction {
-
-        public volatile double positionOffset, positionLinear, positionQuadratic, currentTime, speedOffset, speedLinear;
-    }
-
-    public static class PIDValues {
-        public volatile double p, i, d;
-    }
-
-    public static class TransferFunction {
-        public volatile double slope, throttle;
-    }
+    public volatile Polynomial distancePolynomial;
 }

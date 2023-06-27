@@ -2,7 +2,6 @@ package simulator.ui;
 
 import controller.desired.DesiredWheelSpeed;
 import controller.estimation.DuckieEstimations;
-import controller.parameters.DuckieParameters;
 import controller.parameters.PIDParameters;
 import state.DuckieControls;
 import state.DuckieState;
@@ -16,13 +15,17 @@ import java.util.function.DoubleSupplier;
 public class MonitorBoard extends JPanel {
 
     private final Collection<GraphSequence> graphSequences = new ArrayList<>();
+    private final DuckieEstimations estimations;
 
     private Integer initialLeftTicks, initialRightTicks;
+
+    private final long startTime = System.currentTimeMillis();
 
     public MonitorBoard(
             DuckieState trackedState, DuckieControls controls, DuckieEstimations estimations,
             DesiredWheelSpeed desiredWheelSpeed, PIDParameters pid
     ) {
+        this.estimations = estimations;
         graphSequences.add(new GraphSequence("Left control input", new Color(200, 150, 0), () -> controls.velLeft));
         graphSequences.add(new GraphSequence("Right control input", new Color(250, 190, 20), () -> controls.velRight));
         graphSequences.add(new GraphSequence("Left speed", new Color(0, 50, 180), () -> estimations.leftSpeed));
@@ -45,7 +48,13 @@ public class MonitorBoard extends JPanel {
             }
             return 0.0;
         }));
-        //graphSequences.add(new GraphSequence("Desired left speed", Color.MAGENTA, () -> desiredWheelSpeed.leftSpeed));
+        graphSequences.add(new GraphSequence("Average speed", new Color(100, 50, 180), () -> {
+            var poly = estimations.distancePolynomial;
+            if (poly != null) {
+                return poly.getDerivative().get((System.currentTimeMillis() - startTime) * 0.001);
+            } else return 0.0;
+        }));
+        graphSequences.add(new GraphSequence("Desired average speed", Color.MAGENTA, () -> 0.3));
 
 //        graphSequences.add(new GraphSequence("Left wheel estimator", new Color(200, 0, 200), () -> {
 //            if (initialLeftTicks != null) {
@@ -114,7 +123,30 @@ public class MonitorBoard extends JPanel {
             }
         }
 
+        graphics.setColor(Color.CYAN);
+        graphics.drawString("Speed predictor", GRAPH_WIDTH + 10, labelY);
+        for (long time = currentTime - 3500; time < currentTime + 500; time += 50) {
+            double polyTime1 = (time - startTime) * 0.001;
+            double polyTime2 = (0.05 + time - startTime) * 0.001;
+            var poly = estimations.distancePolynomial;
+            if (poly != null) {
+                poly = poly.getDerivative();
+                graphics.drawLine(
+                        timeToX(currentTime, time), valueToY(poly.get(polyTime1)),
+                        timeToX(currentTime, time + 50), valueToY(poly.get(polyTime2))
+                );
+            }
+        }
+
         Toolkit.getDefaultToolkit().sync();
+    }
+
+    private int timeToX(long currentTime, long measurementTime) {
+        return GRAPH_WIDTH - (int) (500 + currentTime - measurementTime) / 8;
+    }
+
+    private int valueToY(double value) {
+        return (int) ((1.0 - value) * GRAPH_HEIGHT / 2);
     }
 
     private static class GraphSequence {

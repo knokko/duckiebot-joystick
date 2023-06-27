@@ -7,6 +7,7 @@ import controller.desired.DesiredWheelSpeed;
 import controller.estimation.DuckieEstimations;
 import controller.estimation.PoseEstimator;
 import controller.estimation.SpeedEstimator;
+import controller.estimation.SpeedPredictor;
 import controller.parameters.DuckieParameters;
 import controller.updater.ControllerFunction;
 import controller.updater.ControllerUpdater;
@@ -103,13 +104,24 @@ public class SimulatorUI {
         var directSpeedController = new DirectSpeedPIDController(
                 desiredVelocity, desiredWheelSpeed, estimations, parameters.speedPID
         );
+//        var directSpeedController = new SpeedPolyController(estimations, () -> desiredVelocity.speed, throttle -> {
+//            desiredWheelSpeed.leftSpeed = throttle;
+//            desiredWheelSpeed.rightSpeed = throttle;
+//        });
 
         var leftSpeedEstimator = new SpeedEstimator(
-                () -> trackedState.leftWheelEncoder, newSpeed -> estimations.leftSpeed = newSpeed, estimations.leftSpeedFunction
+                () -> trackedState.leftWheelEncoder, newSpeed -> estimations.leftSpeed = newSpeed
         );
         var rightSpeedEstimator = new SpeedEstimator(
-                () -> trackedState.rightWheelEncoder, newSpeed -> estimations.rightSpeed = newSpeed, estimations.rightSpeedFunction
+                () -> trackedState.rightWheelEncoder, newSpeed -> estimations.rightSpeed = newSpeed
         );
+
+        var averageSpeedEstimator = new SpeedPredictor(() -> {
+            Integer leftTicks = trackedState.leftWheelEncoder;
+            Integer rightTicks = trackedState.rightWheelEncoder;
+            if (leftTicks != null && rightTicks != null) return (leftTicks + rightTicks) * 0.5;
+            else return Double.NaN;
+        }, newPoly -> estimations.distancePolynomial = newPoly);
 
         var updater = new ControllerUpdater();
 
@@ -120,14 +132,16 @@ public class SimulatorUI {
         updater.addController(leftSpeedEstimator, 5);
         updater.addController(rightSpeedEstimator, 5);
         updater.addController(poseEstimator, 3);
+        updater.addController(averageSpeedEstimator, 1);
 
         var monitorFrame = new JFrame();
         monitorFrame.setSize(800, 500);
         monitorFrame.setAutoRequestFocus(false);
         monitorFrame.setLocation(1200, 200);
         monitorFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        monitorFrame.add(new MonitorBoard(trackedState, controls, estimations, desiredWheelSpeed, parameters.anglePID));
-        monitorFrame.addKeyListener(new PIDKeyboardTuner(parameters.anglePID));
+        var pid = parameters.anglePID;
+        monitorFrame.add(new MonitorBoard(trackedState, controls, estimations, desiredWheelSpeed, pid));
+        monitorFrame.addKeyListener(new PIDKeyboardTuner(pid));
         monitorFrame.setVisible(true);
 
         var simulatorFrame = new JFrame();
