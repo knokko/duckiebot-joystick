@@ -7,6 +7,7 @@ import controller.desired.DesiredWheelSpeed;
 import controller.estimation.DuckieEstimations;
 import controller.estimation.PoseEstimator;
 import controller.estimation.SpeedEstimator;
+import controller.parameters.DuckieParameters;
 import controller.updater.ControllerFunction;
 import controller.updater.ControllerUpdater;
 import joystick.client.JoystickClientConnection;
@@ -35,6 +36,7 @@ public class SimulatorUI {
         DuckieControls controls;
         DuckieState trackedState;
         ControllerFunction updateFunction;
+        var parameters = new DuckieParameters();
 
         if (useDuckiebot) {
             estimations = new DuckieEstimations();
@@ -95,8 +97,12 @@ public class SimulatorUI {
 
         var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
         //var routeController = new StepController(lowLevelRoute, desiredVelocity, estimations, controls, 5.0);
-        var differentialDriver = new DifferentialDriver(desiredVelocity, desiredWheelSpeed, estimations, controls);
-        var directSpeedController = new DirectSpeedPIDController(desiredVelocity, desiredWheelSpeed, estimations);
+        var differentialDriver = new DifferentialDriver(
+                desiredVelocity, desiredWheelSpeed, estimations, controls, parameters.anglePID
+        );
+        var directSpeedController = new DirectSpeedPIDController(
+                desiredVelocity, desiredWheelSpeed, estimations, parameters.speedPID
+        );
 
         var leftSpeedEstimator = new SpeedEstimator(
                 () -> trackedState.leftWheelEncoder, newSpeed -> estimations.leftSpeed = newSpeed, estimations.leftSpeedFunction
@@ -120,7 +126,8 @@ public class SimulatorUI {
         monitorFrame.setAutoRequestFocus(false);
         monitorFrame.setLocation(1200, 200);
         monitorFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        monitorFrame.add(new MonitorBoard(trackedState, controls, estimations, desiredWheelSpeed));
+        monitorFrame.add(new MonitorBoard(trackedState, controls, estimations, desiredWheelSpeed, parameters.anglePID));
+        monitorFrame.addKeyListener(new PIDKeyboardTuner(parameters.anglePID));
         monitorFrame.setVisible(true);
 
         var simulatorFrame = new JFrame();

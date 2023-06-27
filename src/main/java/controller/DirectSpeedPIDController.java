@@ -3,6 +3,7 @@ package controller;
 import controller.desired.DesiredVelocity;
 import controller.desired.DesiredWheelSpeed;
 import controller.estimation.DuckieEstimations;
+import controller.parameters.PIDParameters;
 import controller.updater.ControllerFunction;
 
 import java.util.LinkedList;
@@ -14,6 +15,7 @@ public class DirectSpeedPIDController implements ControllerFunction {
     private final DesiredVelocity desiredVelocity;
     private final DesiredWheelSpeed desiredWheelSpeed;
     private final DuckieEstimations estimations;
+    private final PIDParameters pid;
 
     // PID variables
     private double errorP = 0;
@@ -26,10 +28,14 @@ public class DirectSpeedPIDController implements ControllerFunction {
 
     private LinkedList<Double> errorList = new LinkedList<>();
 
-    public DirectSpeedPIDController(DesiredVelocity desiredVelocity, DesiredWheelSpeed desiredWheelSpeed, DuckieEstimations estimations) {
+    public DirectSpeedPIDController(
+            DesiredVelocity desiredVelocity, DesiredWheelSpeed desiredWheelSpeed,
+            DuckieEstimations estimations, PIDParameters pid
+    ) {
         this.desiredVelocity = desiredVelocity;
         this.desiredWheelSpeed = desiredWheelSpeed;
         this.estimations = estimations;
+        this.pid = pid;
     }
 
     @Override
@@ -64,11 +70,14 @@ public class DirectSpeedPIDController implements ControllerFunction {
         errorI = errorList.stream().mapToDouble(Double::doubleValue).sum();
         errorD = (errorSpeed - errorP) / deltaTime;
 
-        double Kp = 0.75;
-        double Ki = 0.5;
-        double Kd = 0.2;
+        double correctionP = pid.Kp * errorP;
+        double correctionI = pid.Ki * errorI;
+        double correctionD = pid.Kd * errorD;
+        pid.correctionP = correctionP;
+        pid.correctionI = correctionI;
+        pid.correctionD = correctionD;
 
-        double speedInput = Kp * errorP + Ki * errorI + Kd * errorD;
+        double speedInput = correctionP + correctionI + correctionD;
 
         // TODO Ensure that this stays in range [-maxSpeed, maxSpeed]
         desiredWheelSpeed.leftSpeed = speedInput;

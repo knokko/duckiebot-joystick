@@ -1,6 +1,7 @@
 package controller;
-import state.DuckieControls;
 
+import controller.parameters.PIDParameters;
+import state.DuckieControls;
 
 import controller.desired.DesiredVelocity;
 import controller.desired.DesiredWheelSpeed;
@@ -17,6 +18,7 @@ public class DifferentialDriver implements ControllerFunction {
     private final DesiredWheelSpeed desiredWheelSpeed;
     private final DuckieEstimations estimations;
     private final DuckieControls controls;
+    private final PIDParameters pid;
 
     // PID variables
     private double errorP = 0;
@@ -29,11 +31,15 @@ public class DifferentialDriver implements ControllerFunction {
     private LinkedList<Double> errorList = new LinkedList<>();
 
 
-    public DifferentialDriver(DesiredVelocity desiredVelocity, DesiredWheelSpeed desiredWheelSpeed, DuckieEstimations estimations, DuckieControls controls) {
+    public DifferentialDriver(
+            DesiredVelocity desiredVelocity, DesiredWheelSpeed desiredWheelSpeed, DuckieEstimations estimations,
+            DuckieControls controls, PIDParameters pid
+    ) {
         this.desiredVelocity = desiredVelocity;
         this.desiredWheelSpeed = desiredWheelSpeed;
         this.estimations = estimations;
         this.controls = controls;
+        this.pid = pid;
     }
 
     private double smartAngle(double angle) {
@@ -66,19 +72,15 @@ public class DifferentialDriver implements ControllerFunction {
         errorI = errorList.stream().mapToDouble(Double::doubleValue).sum();
         errorD = error / deltaTime;
 
-        double Kp = 1.0;
-        double Ki = 0.00;
-        double Kd = 0.00000;
-
-
-        double angleCorrection = Kp * errorP + Ki * errorI + Kd * errorD;
-        System.out.printf("P: %.2f, I: %.2f, D: %.2f errD: %.2f\n", Kp*errorP, Ki*errorI, Kd*errorD, errorD);
-
-        // Print PID values
-
+        double correctionP = pid.Kp * errorP;
+        double correctionI = pid.Ki * errorI;
+        double correctionD = pid.Kd * errorD;
+        pid.correctionP = correctionP;
+        pid.correctionI = correctionI;
+        pid.correctionD = correctionD;
+        double angleCorrection = correctionP + correctionI + correctionD;
 
         // Calculate desired wheel speeds
-
         double finalLeftSpeed = desiredWheelSpeed.leftSpeed;
         double finalRightSpeed = desiredWheelSpeed.rightSpeed;
         if(finalLeftSpeed != 0 && finalRightSpeed != 0){
