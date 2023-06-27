@@ -12,7 +12,6 @@ import controller.updater.ControllerUpdater;
 import joystick.client.JoystickClientConnection;
 import planner.GridPosition;
 import planner.KeyboardPlanner;
-import planner.PlannerConnection;
 import planner.RoutePlanner;
 import simulator.Simulator;
 import simulator.Terrain;
@@ -22,25 +21,15 @@ import state.DuckieState;
 import javax.swing.*;
 
 import java.util.LinkedList;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static controller.util.DuckieWheels.GRID_SIZE;
 import static java.lang.Thread.sleep;
 
 public class SimulatorUI {
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         boolean useDuckiebot = args.length > 0 && args[0].contains("duckie");
         boolean useManualRouteControl = args.length > 0 && args[0].contains("manual");
-
-        KeyboardPlanner keyboardPlanner = null;
-        if (useManualRouteControl) {
-            keyboardPlanner = new KeyboardPlanner();
-            Thread keyboardThread = new Thread(keyboardPlanner::start);
-            keyboardThread.setDaemon(true);
-            keyboardThread.start();
-        }
 
         DuckieEstimations estimations;
         DuckieControls controls;
@@ -73,8 +62,8 @@ public class SimulatorUI {
         //var lowLevelRoute = new ConcurrentLinkedQueue<DesiredPose>();
         var lowLevelRoute = new LinkedList<DesiredPose>();
         var highLevelRoute = new LinkedBlockingQueue<GridPosition>();
-        lowLevelRoute.add(new DesiredPose(0.4, 0.5 * GRID_SIZE, 0, false));
-        lowLevelRoute.add(new DesiredPose(0.95, 5 * GRID_SIZE, 0.25, false));
+//        lowLevelRoute.add(new DesiredPose(0.4, 0.5 * GRID_SIZE, 0, false));
+//        lowLevelRoute.add(new DesiredPose(0.95, 5 * GRID_SIZE, 0.25, false));
 //        lowLevelRoute.add(new DesiredPose(0.5, 0.5, 0.25, false));
 //        lowLevelRoute.add(new DesiredPose(0.5, 0.9, 0.25, false));
 //
@@ -97,18 +86,15 @@ public class SimulatorUI {
         var desiredWheelSpeed = new DesiredWheelSpeed();
 
         var routePlanner = new RoutePlanner(highLevelRoute, lowLevelRoute);
-        var routeConnection = new PlannerConnection("localhost", highLevelRoute); // TODO Maybe support more hostnames
 
         Thread routePlannerThread = new Thread(routePlanner::start);
         routePlannerThread.setDaemon(true);
         routePlannerThread.start();
 
-        new Thread(routeConnection::start).start();
-
         var poseEstimator = new PoseEstimator(trackedState, estimations);
 
-        //var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
-        var routeController = new StepController(lowLevelRoute, desiredVelocity, estimations, controls, 5.0);
+        var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
+        //var routeController = new StepController(lowLevelRoute, desiredVelocity, estimations, controls, 5.0);
         var differentialDriver = new DifferentialDriver(desiredVelocity, desiredWheelSpeed, estimations, controls);
         var directSpeedController = new DirectSpeedPIDController(desiredVelocity, desiredWheelSpeed, estimations);
 
@@ -141,8 +127,8 @@ public class SimulatorUI {
         simulatorFrame.setSize(1200, 800);
         simulatorFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, lowLevelRoute));
-        if (keyboardPlanner != null) {
-            simulatorFrame.addKeyListener(keyboardPlanner);
+        if (useManualRouteControl) {
+            simulatorFrame.addKeyListener(new KeyboardPlanner(highLevelRoute));
         }
         simulatorFrame.setVisible(true);
 
