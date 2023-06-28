@@ -58,6 +58,8 @@ public class DifferentialDriver implements ControllerFunction {
         double rampingSpeed = 0.2;
 
         setPoint += Math.signum(angleToGoal) * Math.min(abs(smartAngle(desiredVelocity.angle - setPoint)), rampingSpeed * deltaTime);
+        if (setPoint < 0) setPoint += 1;
+        if (setPoint > 1) setPoint -= 1;
 
         // Window the error list
         if(errorList.size() > 10000){
