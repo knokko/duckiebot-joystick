@@ -3,17 +3,13 @@ package simulator;
 import camera.WallSnapper;
 import planner.GridWall;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import static controller.util.DuckieWheels.GRID_SIZE;
 import static java.lang.Math.*;
 
 public class WallGrid {
 
-    // TODO Test this
     static WallView getWallView(GridWall wall, WallSnapper.FixedPose camera) {
         double startX = wall.gridX() * GRID_SIZE;
         double startY = wall.gridY() * GRID_SIZE;
@@ -28,40 +24,49 @@ public class WallGrid {
         double distance = sqrt((camera.x() - midX) * (camera.x() - midX) + (camera.y() - midY) * (camera.y() - midY));
         double absoluteAngle1 = atan2(startY - camera.y(), startX - camera.x()) / (2 * PI);
         double absoluteAngle2 = atan2(endY - camera.y(), endX - camera.x()) / (2 * PI);
+        double angleDifference = absoluteAngle2 - absoluteAngle1;
+        if (angleDifference > 0.5) angleDifference -= 1;
+        if (angleDifference < -0.5) angleDifference += 1;
+
         double relativeAngle1 = absoluteAngle1 - camera.angle();
-        double relativeAngle2 = absoluteAngle2 - camera.angle();
+        if (relativeAngle1 < -0.5) relativeAngle1 += 1;
+        double relativeAngle2 = relativeAngle1 + angleDifference;
 
-        if (relativeAngle1 < -0.5 && relativeAngle2 < -0.5) {
-            relativeAngle1 += 1;
-            relativeAngle2 += 1;
-        }
-
-        return new WallView(distance, min(relativeAngle1, relativeAngle2), max(relativeAngle1, relativeAngle2));
+        double minAngle = min(relativeAngle1, relativeAngle2);
+        double maxAngle = max(relativeAngle1, relativeAngle2);
+        return new WallView(distance, minAngle, maxAngle);
     }
 
     private final Set<GridWall> allWalls = new HashSet<>();
 
+    public void add(GridWall wall) {
+        allWalls.add(wall);
+    }
+
     // TODO Test this
-    public Collection<GridWall> findVisibleWalls(WallSnapper.FixedPose camera) {
-        var visibleWalls = new ArrayList<GridWall>();
+    public Set<GridWall> findVisibleWalls(WallSnapper.FixedPose camera) {
+        var visibleWalls = new HashSet<GridWall>();
 
         double fov = 0.125; // Assume camera field of view to be 45 degrees
         for (var candidateWall : allWalls) {
             var candidateView = getWallView(candidateWall, camera);
+            Collection<Double> candidateAngles = new LinkedList<>();
+            for (double candidateAngle = candidateView.minAngle; candidateAngle <= candidateView.maxAngle; candidateAngle += 0.001) {
+                candidateAngles.add(candidateAngle);
+            }
+
             if (candidateView.maxAngle > -fov && candidateView.minAngle < fov) {
 
-                boolean isHidden = false;
                 for (var otherWall : allWalls) {
                     var otherView = getWallView(otherWall, camera);
-                    if (otherView.distance < candidateView.distance
-                            && otherView.maxAngle > candidateView.maxAngle && otherView.minAngle < candidateView.minAngle
-                    ) {
-                        isHidden = true;
-                        break;
+                    if (otherView.distance < candidateView.distance) {
+                        candidateAngles.removeIf(
+                                candidateAngle -> candidateAngle > otherView.minAngle && candidateAngle < otherView.maxAngle
+                        );
                     }
                 }
 
-                if (!isHidden) {
+                if (!candidateAngles.isEmpty()) {
                     visibleWalls.add(candidateWall);
                 }
             }
