@@ -39,12 +39,11 @@ public class WallGrid {
 
     private final Set<GridWall> allWalls = new HashSet<>();
 
-    public void add(GridWall wall) {
+    public synchronized void add(GridWall wall) {
         allWalls.add(wall);
     }
 
-    // TODO Test this
-    public Set<GridWall> findVisibleWalls(WallSnapper.FixedPose camera) {
+    public synchronized Set<GridWall> findVisibleWalls(WallSnapper.FixedPose camera) {
         var visibleWalls = new HashSet<GridWall>();
 
         double fov = 0.125; // Assume camera field of view to be 45 degrees
@@ -54,6 +53,7 @@ public class WallGrid {
             for (double candidateAngle = candidateView.minAngle; candidateAngle <= candidateView.maxAngle; candidateAngle += 0.001) {
                 candidateAngles.add(candidateAngle);
             }
+            int originalSize = candidateAngles.size();
 
             if (candidateView.maxAngle > -fov && candidateView.minAngle < fov) {
 
@@ -66,13 +66,18 @@ public class WallGrid {
                     }
                 }
 
-                if (!candidateAngles.isEmpty()) {
+                double coveredAngle = (candidateView.maxAngle - candidateView.minAngle) * candidateAngles.size() / originalSize;
+                if (coveredAngle > 0.02) {
                     visibleWalls.add(candidateWall);
                 }
             }
         }
 
         return visibleWalls;
+    }
+
+    public synchronized Set<GridWall> copyWalls() {
+        return new HashSet<>(allWalls);
     }
 
     record WallView(double distance, double minAngle, double maxAngle) {}

@@ -1,6 +1,7 @@
 package controller.estimation;
 
 import controller.util.Polynomial;
+import simulator.WallGrid;
 
 import static controller.util.DuckieWheels.GRID_SIZE;
 
@@ -23,4 +24,6 @@ public class DuckieEstimations {
     public volatile double leftControlLatency = 0.03, rightControlLatency = 0.03; // TODO Don't hardcode this
 
     public volatile Polynomial distancePolynomial;
+
+    public final WallGrid walls = new WallGrid();
 }

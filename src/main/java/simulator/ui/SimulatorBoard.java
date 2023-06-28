@@ -3,7 +3,9 @@ package simulator.ui;
 import controller.desired.DesiredPose;
 import controller.desired.DesiredVelocity;
 import controller.estimation.DuckieEstimations;
+import planner.GridWall;
 import simulator.Simulator;
+import simulator.WallGrid;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,12 +28,14 @@ public class SimulatorBoard extends JPanel {
     private final DuckieEstimations estimations;
     private final DesiredVelocity desiredVelocity;
     private final Queue<DesiredPose> route;
+    private final WallGrid realWalls;
 
-    public SimulatorBoard(DuckieEstimations estimations, DesiredVelocity desiredVelocity, Queue<DesiredPose> route) {
+    public SimulatorBoard(DuckieEstimations estimations, DesiredVelocity desiredVelocity, Queue<DesiredPose> route, WallGrid realWalls) {
         this.estimations = estimations;
         this.desiredVelocity = desiredVelocity;
         //this.route = new LinkedList<>(route);
         this.route = route;
+        this.realWalls = realWalls;
     }
 
     private final java.util.List<Point2D.Double> visitedPoints = new ArrayList<>();
@@ -135,6 +139,37 @@ public class SimulatorBoard extends JPanel {
                     transformRealX(point.x), transformRealY(point.y),
                     transformRealX(point.x + 0.03 * simpleCos(point.angle)), transformRealY(point.y + 0.03 * simpleSin(point.angle))
             );
+        }
+
+        record WallToDraw(GridWall wall, Color color) {}
+        var wallsToDraw = new ArrayList<WallToDraw>();
+
+        if (this.realWalls != null) {
+            var realWalls = this.realWalls.copyWalls();
+            var estimatedWalls = estimations.walls.copyWalls();
+            for (var wall : realWalls) {
+                if (estimatedWalls.contains(wall)) wallsToDraw.add(new WallToDraw(wall, Color.GREEN));
+                else wallsToDraw.add(new WallToDraw(wall, Color.BLACK));
+            }
+            for (var wall : estimatedWalls) {
+                if (!realWalls.contains(wall)) wallsToDraw.add(new WallToDraw(wall, Color.RED));
+            }
+        } else {
+            for (var wall : estimations.walls.copyWalls()) {
+                wallsToDraw.add(new WallToDraw(wall, Color.BLACK));
+            }
+        }
+
+        for (var wall : wallsToDraw) {
+            int x = transformRealX(GRID_SIZE * wall.wall.gridX());
+            int y = transformRealY(GRID_SIZE * wall.wall.gridY());
+            int length = transformRealX(GRID_SIZE * (wall.wall.gridX() + 1)) - x;
+            graphics.setColor(wall.color);
+            if (wall.wall.axis() == GridWall.Axis.X) {
+                graphics.fillRect(x, y - 5, length, 10);
+            } else {
+                graphics.fillRect(x - 5, y - length, 10, length);
+            }
         }
 
         Toolkit.getDefaultToolkit().sync();

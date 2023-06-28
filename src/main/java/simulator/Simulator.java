@@ -1,10 +1,15 @@
 package simulator;
 
+import camera.CameraWalls;
+import camera.RelativeWall;
+import camera.WallSnapper;
 import controller.estimation.DuckieEstimations;
 import controller.updater.ControllerFunction;
 import state.DuckieControls;
 import state.DuckiePose;
 import state.DuckieState;
+
+import java.util.stream.Collectors;
 
 import static controller.util.DuckieWheels.*;
 import static java.lang.Math.cos;
@@ -18,20 +23,23 @@ public class Simulator implements ControllerFunction {
     private double exactLeftWheelTicks, exactRightWheelTicks;
     public final DuckieControls controls;
     public final DuckieState trackedState;
+    public final WallGrid walls = SimulatorMaze.createTestingWallGrid();
 
     private final SimulatorLatency<Double> leftControl, rightControl;
     private final SimulatorLatency<Integer> leftTicks, rightTicks;
+    private final int cameraInterval;
 
     private double currentTime = 0.0;
 
     public Simulator(Terrain terrain) {
-        this(terrain, 0.0, 0.0, 0.0, 0.0);
+        this(terrain, 0.0, 0.0, 0.0, 0.0, 100);
     }
 
     public Simulator(
             Terrain terrain,
             double leftControlLatency, double rightControlLatency,
-            double leftTickLatency, double rightTickLatency
+            double leftTickLatency, double rightTickLatency,
+            int cameraInterval
     ) {
         this.terrain = terrain;
         this.realPose = new DuckiePose();
@@ -45,6 +53,8 @@ public class Simulator implements ControllerFunction {
         this.rightControl = new SimulatorLatency<>(rightControlLatency, 0.0);
         this.leftTicks = new SimulatorLatency<>(leftTickLatency, 0);
         this.rightTicks = new SimulatorLatency<>(rightTickLatency, 0);
+
+        this.cameraInterval = cameraInterval;
     }
 
     /**
@@ -79,5 +89,16 @@ public class Simulator implements ControllerFunction {
         trackedState.rightWheelEncoder = rightTicks.get(currentTime);
         trackedState.leftWheelControl = leftControl.get(currentTime);
         trackedState.rightWheelControl = rightControl.get(currentTime);
+
+        var oldWalls = trackedState.cameraWalls;
+        long currentTime = System.currentTimeMillis();
+        if (oldWalls == null || (currentTime - oldWalls.timestamp() > cameraInterval)) {
+            var cameraPose = new WallSnapper.FixedPose(realPose.x, realPose.y, realPose.angle);
+            var visibleWalls = walls.findVisibleWalls(cameraPose);
+            var relativeWalls = visibleWalls.stream().map(
+                    wall -> RelativeWall.fromGrid(wall, cameraPose)
+            ).collect(Collectors.toSet());
+            trackedState.cameraWalls = new CameraWalls(currentTime, relativeWalls);
+        }
     }
 }

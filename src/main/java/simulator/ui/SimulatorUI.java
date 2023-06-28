@@ -1,5 +1,6 @@
 package simulator.ui;
 
+import camera.WallMapper;
 import controller.*;
 import controller.desired.DesiredPose;
 import controller.desired.DesiredVelocity;
@@ -13,10 +14,12 @@ import controller.updater.ControllerFunction;
 import controller.updater.ControllerUpdater;
 import joystick.client.JoystickClientConnection;
 import planner.GridPosition;
+import planner.GridWall;
 import planner.KeyboardPlanner;
 import planner.RoutePlanner;
 import simulator.Simulator;
 import simulator.Terrain;
+import simulator.WallGrid;
 import state.DuckieControls;
 import state.DuckieState;
 
@@ -38,6 +41,7 @@ public class SimulatorUI {
         DuckieState trackedState;
         ControllerFunction updateFunction;
         var parameters = new DuckieParameters();
+        WallGrid realWalls = null;
 
         if (useDuckiebot) {
             estimations = new DuckieEstimations();
@@ -54,12 +58,13 @@ public class SimulatorUI {
             connection.start();
         } else {
             var simulator = new Simulator(
-                    Terrain.IDEAL, 0.0, 0.0, 0.0, 0.0
+                    Terrain.IDEAL, 0.0, 0.0, 0.0, 0.0, 100
             );
             estimations = simulator.estimations;
             controls = simulator.controls;
             trackedState = simulator.trackedState;
             updateFunction = simulator;
+            realWalls = simulator.walls;
         }
 
         //var lowLevelRoute = new ConcurrentLinkedQueue<DesiredPose>();
@@ -134,6 +139,9 @@ public class SimulatorUI {
         updater.addController(poseEstimator, 3);
         updater.addController(averageSpeedEstimator, 1);
 
+        var wallUpdater = new ControllerUpdater();
+        wallUpdater.addController(new WallMapper(estimations, trackedState), 1);
+
         var monitorFrame = new JFrame();
         monitorFrame.setSize(800, 500);
         monitorFrame.setAutoRequestFocus(false);
@@ -147,7 +155,7 @@ public class SimulatorUI {
         var simulatorFrame = new JFrame();
         simulatorFrame.setSize(1200, 800);
         simulatorFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, lowLevelRoute));
+        simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, lowLevelRoute, realWalls));
         if (useManualRouteControl) {
             simulatorFrame.addKeyListener(new KeyboardPlanner(highLevelRoute));
         }
@@ -156,6 +164,10 @@ public class SimulatorUI {
         Thread updateThread = new Thread(updater::start);
         updateThread.setDaemon(true);
         updateThread.start();
+
+        Thread wallThread = new Thread(wallUpdater::start);
+        wallThread.setDaemon(true);
+        wallThread.start();
 
         Thread repaintThread = new Thread(() -> {
             try {
