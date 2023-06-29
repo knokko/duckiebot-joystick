@@ -16,7 +16,7 @@ public class BezierController implements ControllerFunction {
     private final DesiredVelocity desiredVelocity;
     private final DuckieEstimations estimations;
 
-    private double timeout;
+    private double nextPoseTimer;
 
     public BezierController(
             Queue<DesiredPose> route, DesiredVelocity desiredVelocity,
@@ -29,9 +29,13 @@ public class BezierController implements ControllerFunction {
 
     @Override
     public void update(double deltaTime) {
-        timeout -= deltaTime;
-        if (timeout > 0.0) return;
-        if (timeout < 0.0) timeout = 0.0;
+        if (nextPoseTimer > 0) {
+            nextPoseTimer -= deltaTime;
+            if (nextPoseTimer <= 0) {
+                nextPoseTimer = 0;
+                route.poll();
+            }
+        }
 
         var destinationPose = route.peek();
 
@@ -58,12 +62,8 @@ public class BezierController implements ControllerFunction {
         var dy = destinationPose.y - estimations.y;
         var distance = sqrt(dx * dx + dy * dy);
 
-        if (distance < 0.06) {
-            boolean wasBackward = destinationPose.backward;
-            route.poll();
-            var nextPose = route.peek();
-            if (nextPose != null && wasBackward == nextPose.backward) timeout = abs(distance / speed);
-            return;
+        if (distance < 0.08 && nextPoseTimer == 0.0) {
+            nextPoseTimer = abs(distance * 0.8 / speed);
         }
 
         double x1 = estimations.x;
