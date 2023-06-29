@@ -3,7 +3,7 @@ package camera;
 import org.junit.Test;
 import planner.GridWall;
 
-import static controller.util.DuckieWheels.GRID_SIZE;
+import static controller.util.DuckieBot.GRID_SIZE;
 import static junit.framework.TestCase.assertEquals;
 
 public class TestAbsoluteWall {

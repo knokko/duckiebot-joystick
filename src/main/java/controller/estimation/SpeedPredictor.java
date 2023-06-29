@@ -1,7 +1,7 @@
 package controller.estimation;
 
 import controller.updater.ControllerFunction;
-import controller.util.DuckieWheels;
+import controller.util.DuckieBot;
 import controller.util.Polynomial;
 
 import java.util.LinkedList;
@@ -28,7 +28,7 @@ public class SpeedPredictor implements ControllerFunction {
         globalTime += deltaTime;
         double averageTicks = getWheelTicks.getAsDouble();
         if (!Double.isNaN(averageTicks)) {
-            double averageDistance = averageTicks * DuckieWheels.WHEEL_CIRCUMFERENCE / DuckieWheels.WHEEL_TICKS_PER_TURN;
+            double averageDistance = averageTicks * DuckieBot.WHEEL_CIRCUMFERENCE / DuckieBot.WHEEL_TICKS_PER_TURN;
             pastPositions.add(new PositionEntry(globalTime, averageDistance));
         }
 

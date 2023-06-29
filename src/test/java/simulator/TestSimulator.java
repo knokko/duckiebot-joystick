@@ -2,7 +2,7 @@ package simulator;
 
 import org.junit.Test;
 
-import static controller.util.DuckieWheels.*;
+import static controller.util.DuckieBot.*;
 import static junit.framework.TestCase.assertEquals;
 
 public class TestSimulator {

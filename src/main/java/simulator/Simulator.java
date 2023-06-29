@@ -11,9 +11,8 @@ import state.DuckieState;
 
 import java.util.stream.Collectors;
 
-import static controller.util.DuckieWheels.*;
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
+import static controller.util.DuckieBot.*;
+import static java.lang.Math.*;
 
 public class Simulator implements ControllerFunction {
 
@@ -76,19 +75,19 @@ public class Simulator implements ControllerFunction {
         double leftVelocity = terrain.leftSpeedFunction.apply(leftControl.get(currentTime));
         double rightVelocity = terrain.rightSpeedFunction.apply(rightControl.get(currentTime));
         double averageVelocity = 0.5 * (leftVelocity + rightVelocity);
-        double angleRadians = realPose.angle * 2 * Math.PI; // Convert turns to radians
+        double angleRadians = realPose.angle * 2 * PI; // Convert turns to radians
         realPose.velocityX = averageVelocity * cos(angleRadians);
         realPose.velocityY = averageVelocity * sin(angleRadians);
 
-        realPose.angle += deltaTime * (rightVelocity - leftVelocity) / (2 * Math.PI * DISTANCE_BETWEEN_WHEELS);
+        realPose.angle += deltaTime * (rightVelocity - leftVelocity) / (2 * PI * DISTANCE_BETWEEN_WHEELS);
         if (realPose.angle >= 1) realPose.angle -= 1;
         if (realPose.angle < 0) realPose.angle += 1;
 
         if (Math.random() >= leftSlipChance) {
-            this.exactLeftWheelTicks += WHEEL_TICKS_PER_TURN * deltaTime * leftVelocity / (2 * Math.PI * WHEEL_RADIUS);
+            this.exactLeftWheelTicks += WHEEL_TICKS_PER_TURN * deltaTime * leftVelocity / (2 * PI * WHEEL_RADIUS);
         }
         if (Math.random() >= rightSlipChance) {
-            this.exactRightWheelTicks += WHEEL_TICKS_PER_TURN * deltaTime * rightVelocity / (2 * Math.PI * WHEEL_RADIUS);
+            this.exactRightWheelTicks += WHEEL_TICKS_PER_TURN * deltaTime * rightVelocity / (2 * PI * WHEEL_RADIUS);
         }
         leftTicks.insert(currentTime, (int) exactLeftWheelTicks);
         rightTicks.insert(currentTime, (int) exactRightWheelTicks);
@@ -100,7 +99,12 @@ public class Simulator implements ControllerFunction {
         var oldWalls = trackedState.cameraWalls;
         long currentTime = System.currentTimeMillis();
         if (oldWalls == null || (currentTime - oldWalls.timestamp() > cameraInterval)) {
-            var cameraPose = new WallSnapper.FixedPose(realPose.x, realPose.y, realPose.angle);
+            double realAngleRad = realPose.angle * 2 * PI;
+            var cameraPose = new WallSnapper.FixedPose(
+                    realPose.x + CAMERA_OFFSET * cos(realAngleRad),
+                    realPose.y + CAMERA_OFFSET * sin(realAngleRad),
+                    realPose.angle
+            );
             var visibleWalls = walls.findVisibleWalls(cameraPose);
             var relativeWalls = visibleWalls.stream().map(
                     wall -> RelativeWall.fromGrid(wall, cameraPose)

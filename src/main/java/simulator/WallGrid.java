@@ -5,7 +5,7 @@ import planner.GridWall;
 
 import java.util.*;
 
-import static controller.util.DuckieWheels.GRID_SIZE;
+import static controller.util.DuckieBot.GRID_SIZE;
 import static java.lang.Math.*;
 
 public class WallGrid {

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-import static controller.util.DuckieWheels.GRID_SIZE;
+import static controller.util.DuckieBot.GRID_SIZE;
 import static junit.framework.TestCase.assertEquals;
 
 public class TestWallSnapper {

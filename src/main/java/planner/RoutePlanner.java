@@ -7,7 +7,7 @@ import java.util.concurrent.BlockingQueue;
 
 import static controller.desired.DesiredPose.STATUS_CANCELLED;
 import static controller.desired.DesiredPose.STATUS_UNREAD;
-import static controller.util.DuckieWheels.GRID_SIZE;
+import static controller.util.DuckieBot.GRID_SIZE;
 
 public class RoutePlanner {
 

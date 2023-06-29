@@ -6,7 +6,7 @@ import planner.GridWall;
 
 import java.util.HashSet;
 
-import static controller.util.DuckieWheels.GRID_SIZE;
+import static controller.util.DuckieBot.GRID_SIZE;
 import static junit.framework.TestCase.assertEquals;
 import static simulator.WallGrid.getWallView;
 

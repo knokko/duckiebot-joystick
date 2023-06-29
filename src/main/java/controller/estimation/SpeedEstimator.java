@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
 
-import static controller.util.DuckieWheels.*;
+import static controller.util.DuckieBot.*;
 
 public class SpeedEstimator implements ControllerFunction {
 

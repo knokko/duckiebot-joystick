@@ -4,7 +4,9 @@ import controller.estimation.DuckieEstimations;
 import controller.updater.ControllerFunction;
 import state.DuckieState;
 
-import static controller.util.DuckieWheels.GRID_SIZE;
+import static controller.util.DuckieBot.CAMERA_OFFSET;
+import static controller.util.DuckieBot.GRID_SIZE;
+import static java.lang.Math.*;
 
 public class WallMapper implements ControllerFunction {
 
@@ -30,16 +32,21 @@ public class WallMapper implements ControllerFunction {
         if (relativeWalls != null && lastTimestamp != relativeWalls.timestamp()) {
             lastTimestamp = relativeWalls.timestamp();
 
-            var snapper = new WallSnapper(relativeWalls.walls(), new WallSnapper.FixedPose(estimations.x, estimations.y, estimations.angle));
-            var snapResult = snapper.snap(0.1, 33, 0.01 * GRID_SIZE, 33);
+            double angleRad = estimations.angle * 2 * PI;
+            var snapper = new WallSnapper(relativeWalls.walls(), new WallSnapper.FixedPose(
+                    estimations.x + CAMERA_OFFSET * cos(angleRad),
+                    estimations.y + CAMERA_OFFSET * sin(angleRad),
+                    estimations.angle
+            ));
+            var snapResult = snapper.snap(0.01, 33, 0.01 * GRID_SIZE, 33);
 
             if (snapResult.error() <= maxMapError && snapResult.walls().size() > 2) {
                 for (var wall : snapResult.walls()) estimations.walls.add(wall);
             }
 
             if (snapResult.error() <= maxCorrectionError) {
-                estimations.x = snapResult.correctedPose().x();
-                estimations.y = snapResult.correctedPose().y();
+                estimations.x = snapResult.correctedPose().x() - CAMERA_OFFSET * cos(angleRad);
+                estimations.y = snapResult.correctedPose().y() - CAMERA_OFFSET * sin(angleRad);
                 estimations.angle = snapResult.correctedPose().angle();
             }
         }

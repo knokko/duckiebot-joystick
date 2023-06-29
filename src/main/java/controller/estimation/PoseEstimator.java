@@ -3,7 +3,7 @@ package controller.estimation;
 import controller.updater.ControllerFunction;
 import state.DuckieState;
 
-import static controller.util.DuckieWheels.*;
+import static controller.util.DuckieBot.*;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 

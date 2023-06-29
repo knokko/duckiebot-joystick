@@ -1,6 +1,6 @@
 package state;
 
-import static controller.util.DuckieWheels.GRID_SIZE;
+import static controller.util.DuckieBot.GRID_SIZE;
 
 public class DuckiePose {
 

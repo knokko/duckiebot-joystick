@@ -4,7 +4,6 @@ import controller.desired.DesiredPose;
 import controller.desired.DesiredVelocity;
 import controller.estimation.DuckieEstimations;
 import planner.GridWall;
-import simulator.Simulator;
 import simulator.WallGrid;
 import state.DuckiePose;
 
@@ -12,11 +11,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Queue;
 
 import static controller.desired.DesiredPose.*;
-import static controller.util.DuckieWheels.*;
+import static controller.util.DuckieBot.*;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import static planner.RoutePlanner.simpleCos;

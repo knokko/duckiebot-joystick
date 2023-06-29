@@ -2,7 +2,7 @@ package camera;
 
 import planner.GridWall;
 
-import static controller.util.DuckieWheels.GRID_SIZE;
+import static controller.util.DuckieBot.GRID_SIZE;
 import static java.lang.Math.*;
 
 public record RelativeWall(double distance, double angle) {
