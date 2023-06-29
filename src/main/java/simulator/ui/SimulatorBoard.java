@@ -135,7 +135,7 @@ public class SimulatorBoard extends JPanel {
         if (!estimatedVisitedPoints.contains(newPoint)) estimatedVisitedPoints.add(newPoint);
 
         radius = 5;
-        for (var point : route) {
+        for (var point : new ArrayList<>(route)) {
             int status = point.status.get();
             if (status == STATUS_UNREAD) {
                 if (point.backward) graphics.setColor(new Color(0, 0, 100));
