@@ -88,7 +88,7 @@ public class DifferentialDriver implements ControllerFunction {
         if(finalLeftSpeed != 0 && finalRightSpeed != 0){
             finalLeftSpeed -= angleCorrection;
             finalRightSpeed += angleCorrection;
-        }
+        } else errorList.clear();
 
         controls.velLeft = finalLeftSpeed;
         controls.velRight = finalRightSpeed;
