@@ -17,17 +17,14 @@ public class DirectSpeedPIDController implements ControllerFunction {
     private final DuckieEstimations estimations;
     private final PIDParameters pid;
 
-    // PID variables
-    private double errorP = 0;
-    private double errorI = 0;
-    private double errorD = 0;
-
     // Ramping parameters
     private double setPoint = 0;
     private double rampingSpeed = 1;
+    private int derivativeBackPropagator = 5;
 
-    private LinkedList<Double> errorList = new LinkedList<>();
-
+    private LinkedList<ErrorSample> errorList = new LinkedList<>();
+    record ErrorSample(double timestamp, double error) {}
+    
     public DirectSpeedPIDController(
             DesiredVelocity desiredVelocity, DesiredWheelSpeed desiredWheelSpeed,
             DuckieEstimations estimations, PIDParameters pid
@@ -40,6 +37,11 @@ public class DirectSpeedPIDController implements ControllerFunction {
 
     @Override
     public void update(double deltaTime) {
+        // PID variables
+        double errorP = 0;
+        double errorI = 0;
+        double errorD = 0;
+
         // Setpoint ramping
         double speed = (estimations.leftSpeed + estimations.rightSpeed)/2;
 
@@ -56,19 +58,42 @@ public class DirectSpeedPIDController implements ControllerFunction {
             setPoint = 0.0;
         }
 
-        setPoint += Math.min(desiredVelocity.speed - setPoint, rampingSpeed * deltaTime);
+        //setPoint +=                sign                      *                      magnitude
+        setPoint += Math.signum(desiredVelocity.speed - speed) * Math.min(abs((desiredVelocity.speed - speed)), rampingSpeed * deltaTime);
         double errorSpeed = setPoint - speed;
 
         // Window the error list
-        if(errorList.size() > 1000){
+        if(errorList.size() > 10000){
             errorList.removeFirst();
         }
 
-        // Calculate PID
+        // Calculate Last error
+        double lastError = 0;
+        int lastErrorIndex = Math.max(errorList.size()-derivativeBackPropagator, 0);
+        if (!errorList.isEmpty()) {
+            lastError = errorList.get(lastErrorIndex).error;
+        }
+
+        // Propotional
         errorP = errorSpeed;
-        errorList.add(errorSpeed * deltaTime);
-        errorI = errorList.stream().mapToDouble(Double::doubleValue).sum();
-        errorD = (errorSpeed - errorP) / deltaTime;
+
+        // Intergral
+        for (int i = 0; i < errorList.size(); i++) {
+            errorI += errorList.get(i).error * errorList.get(i).timestamp;
+        }
+        errorList.add(new ErrorSample(deltaTime, errorSpeed));
+
+        // Derivative
+        double timeDiff = 0;
+        for (int i = lastErrorIndex; i < errorList.size() ; i++) {
+            timeDiff += errorList.get(i).timestamp;
+        }
+
+        if(timeDiff > 0){
+            errorD = (errorSpeed - lastError) / timeDiff;
+        }else{
+            errorD = 0;
+        }
 
         double correctionP = pid.Kp * errorP;
         double correctionI = pid.Ki * errorI;

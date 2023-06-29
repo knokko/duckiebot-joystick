@@ -20,16 +20,12 @@ public class DifferentialDriver implements ControllerFunction {
     private final DuckieControls controls;
     private final PIDParameters pid;
 
-    // PID variables
-    private double errorP = 0;
-    private double errorI = 0;
-    private double errorD = 0;
-
     // Ramping parameters
     private double setPoint = 0;
+    private int derivativeBackPropagator = 5;
 
-    private LinkedList<Double> errorList = new LinkedList<>();
-
+    private LinkedList<ErrorSample> errorList = new LinkedList<>();
+    record ErrorSample(double timestamp, double error) {}
 
     public DifferentialDriver(
             DesiredVelocity desiredVelocity, DesiredWheelSpeed desiredWheelSpeed, DuckieEstimations estimations,
@@ -50,6 +46,11 @@ public class DifferentialDriver implements ControllerFunction {
 
     @Override
     public void update(double deltaTime) {
+        // PID variables
+        double errorP = 0;
+        double errorI = 0;
+        double errorD = 0;
+
         double rawAngleToGoal = desiredVelocity.angle - estimations.angle;
         double angleToGoal = smartAngle(rawAngleToGoal);
 
@@ -69,10 +70,33 @@ public class DifferentialDriver implements ControllerFunction {
         // Calculate PID
         var error = smartAngle(setPoint - estimations.angle);
 
+        // Calculate Last error
+        double lastError = 0;
+        int lastErrorIndex = Math.max(errorList.size()-derivativeBackPropagator, 0);
+        if (!errorList.isEmpty()) {
+            lastError = errorList.get(lastErrorIndex).error;
+        }
+
+        // Propotional
         errorP = error;
-        errorList.add(error * deltaTime);
-        errorI = errorList.stream().mapToDouble(Double::doubleValue).sum();
-        errorD = error / deltaTime;
+
+        // Intergral
+        for (int i = 0; i < errorList.size(); i++) {
+            errorI += errorList.get(i).error * errorList.get(i).timestamp;
+        }
+        errorList.add(new ErrorSample(deltaTime, error));
+
+        // Derivative
+        double timeDiff = 0;
+        for (int i = lastErrorIndex; i < errorList.size() ; i++) {
+            timeDiff += errorList.get(i).timestamp;
+        }
+
+        if(timeDiff > 0){
+            errorD = (error - lastError) / timeDiff;
+        }else{
+            errorD = 0;
+        }
 
         double correctionP = pid.Kp * errorP;
         double correctionI = pid.Ki * errorI;

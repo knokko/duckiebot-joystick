@@ -17,6 +17,8 @@ public class StepController implements ControllerFunction {
     private final DuckieEstimations estimations;
     private final DuckieControls controls;
     private final double maxAcceleration;
+    private final double startTime = 2;
+    private double timeSum = 0;
 
     public StepController(
             List<DesiredPose> route, DesiredVelocity desiredVelocity,
@@ -38,6 +40,14 @@ public class StepController implements ControllerFunction {
         }
 
         double speed = 0.5; // 0.2 worked
+
+        if(timeSum < startTime)
+        {
+            timeSum += deltaTime;
+            desiredVelocity.angle = estimations.angle; //atan2(dy, dx) / (2 * Math.PI);
+            desiredVelocity.speed = 0;
+            return;
+        }
         
         // Distance to next²
         var destinationPose     = route.get(0);

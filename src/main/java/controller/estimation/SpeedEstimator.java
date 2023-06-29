@@ -28,12 +28,12 @@ public class SpeedEstimator implements ControllerFunction {
         globalTimer += deltaTime;
         Integer currentTicks = wheelTicks.get();
 
-        double maxTimeDifference = 0.35; // was 0.05
+        double maxTimeDifference = 0.25; // was 0.05
         lastEntries.removeIf(entry -> entry.timeStamp < globalTimer - maxTimeDifference);
 
         if (currentTicks != null) lastEntries.add(0, new PositionEntry(currentTicks, globalTimer));
 
-        var poly = Polynomial.fit(lastEntries, 2);
+        var poly = Polynomial.fit(lastEntries, 1);
         if (poly != null) {
             speedEstimation.accept(poly.getDerivative().get(globalTimer));
         } else {

@@ -32,9 +32,9 @@ public class SpeedPredictor implements ControllerFunction {
             pastPositions.add(new PositionEntry(globalTime, averageDistance));
         }
 
-        pastPositions.removeIf(entry -> entry.time < globalTime - 0.8);
+        pastPositions.removeIf(entry -> entry.time < globalTime - 0.25);
 
-        int degree = 2;
+        int degree = 1;
         Polynomial polynomial = Polynomial.fit(pastPositions, degree);
         if (polynomial != null) setPolynomial.accept(polynomial);
     }

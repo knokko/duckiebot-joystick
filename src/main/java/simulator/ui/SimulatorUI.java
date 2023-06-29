@@ -12,6 +12,7 @@ import controller.estimation.SpeedPredictor;
 import controller.parameters.DuckieParameters;
 import controller.updater.ControllerFunction;
 import controller.updater.ControllerUpdater;
+import controller.util.DuckieBot;
 import joystick.client.JoystickClientConnection;
 import planner.GridPosition;
 import planner.KeyboardPlanner;
@@ -60,7 +61,7 @@ public class SimulatorUI {
         } else {
             var simulator = new Simulator(
                     Terrain.IDEAL, 0.0, 0.0, 0.0, 0.0,
-                    100, 0.03, 0.13
+                    100, 0.00, 0.0
             );
             estimations = simulator.estimations;
             controls = simulator.controls;
@@ -73,7 +74,8 @@ public class SimulatorUI {
         //var lowLevelRoute = new ConcurrentLinkedQueue<DesiredPose>();
         var lowLevelRoute = new LinkedList<DesiredPose>();
         var highLevelRoute = new LinkedBlockingQueue<GridPosition>();
-//        lowLevelRoute.add(new DesiredPose(0.4, 0.5 * GRID_SIZE, 0, false));
+        lowLevelRoute.add(new DesiredPose(0.4, 0.5 * DuckieBot.GRID_SIZE, 0, false));
+        lowLevelRoute.add(new DesiredPose(10.4, 0.5 * DuckieBot.GRID_SIZE, 0, false));
 //        lowLevelRoute.add(new DesiredPose(0.95, 5 * GRID_SIZE, 0.25, false));
 //        lowLevelRoute.add(new DesiredPose(0.5, 0.5, 0.25, false));
 //        lowLevelRoute.add(new DesiredPose(0.5, 0.9, 0.25, false));
@@ -104,8 +106,8 @@ public class SimulatorUI {
 
         var poseEstimator = new PoseEstimator(trackedState, estimations);
 
-        var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
-        //var routeController = new StepController(lowLevelRoute, desiredVelocity, estimations, controls, 5.0);
+        //var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
+        var routeController = new StepController(lowLevelRoute, desiredVelocity, estimations, controls, 5.0);
         var differentialDriver = new DifferentialDriver(
                 desiredVelocity, desiredWheelSpeed, estimations, controls, parameters.anglePID
         );
@@ -143,7 +145,7 @@ public class SimulatorUI {
         updater.addController(averageSpeedEstimator, 1);
 
         var wallUpdater = new ControllerUpdater();
-        wallUpdater.addController(new WallMapper(estimations, trackedState, 0.01, 0.01), 1);
+        //wallUpdater.addController(new WallMapper(estimations, trackedState, 0.01, 0.01), 1);
 
         var monitorFrame = new JFrame();
         monitorFrame.setSize(800, 500);
