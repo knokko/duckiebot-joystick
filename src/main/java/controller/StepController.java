@@ -39,7 +39,7 @@ public class StepController implements ControllerFunction {
             return;
         }
 
-        double speed = 0.5; // 0.2 worked
+        double speed = 0.35; // 0.2 worked
 
         if(timeSum < startTime)
         {
