@@ -6,6 +6,7 @@ import controller.estimation.DuckieEstimations;
 import planner.GridWall;
 import simulator.Simulator;
 import simulator.WallGrid;
+import state.DuckiePose;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,16 +30,22 @@ public class SimulatorBoard extends JPanel {
     private final DesiredVelocity desiredVelocity;
     private final Queue<DesiredPose> route;
     private final WallGrid realWalls;
+    private final DuckiePose realPose;
 
-    public SimulatorBoard(DuckieEstimations estimations, DesiredVelocity desiredVelocity, Queue<DesiredPose> route, WallGrid realWalls) {
+    public SimulatorBoard(
+            DuckieEstimations estimations, DesiredVelocity desiredVelocity, Queue<DesiredPose> route,
+            WallGrid realWalls, DuckiePose realPose
+    ) {
         this.estimations = estimations;
         this.desiredVelocity = desiredVelocity;
         //this.route = new LinkedList<>(route);
         this.route = route;
         this.realWalls = realWalls;
+        this.realPose = realPose;
     }
 
-    private final java.util.List<Point2D.Double> visitedPoints = new ArrayList<>();
+    private final java.util.List<Point2D.Double> estimatedVisitedPoints = new ArrayList<>();
+    private final java.util.List<Point2D.Double> realVisitedPoints = new ArrayList<>();
 
     @Override
     public void paint(Graphics graphics) {
@@ -112,13 +119,22 @@ public class SimulatorBoard extends JPanel {
             );
         }
 
-        graphics.setColor(Color.RED);
         int radius = 1;
-        for (var point : visitedPoints) {
+        if (realPose != null) {
+            graphics.setColor(Color.MAGENTA);
+            for (var point : realVisitedPoints) {
+                graphics.fillOval(transformRealX(point.x) - radius, transformRealY(point.y) - radius, 2 * radius, 2 * radius);
+            }
+            var newPoint = new Point2D.Double(realPose.x, realPose.y);
+            if (!realVisitedPoints.contains(newPoint)) realVisitedPoints.add(newPoint);
+        }
+
+        graphics.setColor(Color.RED);
+        for (var point : estimatedVisitedPoints) {
             graphics.fillOval(transformRealX(point.x) - radius, transformRealY(point.y) - radius, 2 * radius, 2 * radius);
         }
         var newPoint = new Point2D.Double(estimations.x, estimations.y);
-        if (!visitedPoints.contains(newPoint)) visitedPoints.add(newPoint);
+        if (!estimatedVisitedPoints.contains(newPoint)) estimatedVisitedPoints.add(newPoint);
 
         radius = 5;
         for (var point : route) {

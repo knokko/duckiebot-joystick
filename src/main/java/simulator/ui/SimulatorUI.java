@@ -14,13 +14,13 @@ import controller.updater.ControllerFunction;
 import controller.updater.ControllerUpdater;
 import joystick.client.JoystickClientConnection;
 import planner.GridPosition;
-import planner.GridWall;
 import planner.KeyboardPlanner;
 import planner.RoutePlanner;
 import simulator.Simulator;
 import simulator.Terrain;
 import simulator.WallGrid;
 import state.DuckieControls;
+import state.DuckiePose;
 import state.DuckieState;
 
 import javax.swing.*;
@@ -42,6 +42,7 @@ public class SimulatorUI {
         ControllerFunction updateFunction;
         var parameters = new DuckieParameters();
         WallGrid realWalls = null;
+        DuckiePose realPose = null;
 
         if (useDuckiebot) {
             estimations = new DuckieEstimations();
@@ -58,13 +59,15 @@ public class SimulatorUI {
             connection.start();
         } else {
             var simulator = new Simulator(
-                    Terrain.IDEAL, 0.0, 0.0, 0.0, 0.0, 100
+                    Terrain.IDEAL, 0.0, 0.0, 0.0, 0.0,
+                    100, 0.00, 0.00
             );
             estimations = simulator.estimations;
             controls = simulator.controls;
             trackedState = simulator.trackedState;
             updateFunction = simulator;
             realWalls = simulator.walls;
+            realPose = simulator.realPose;
         }
 
         //var lowLevelRoute = new ConcurrentLinkedQueue<DesiredPose>();
@@ -155,7 +158,7 @@ public class SimulatorUI {
         var simulatorFrame = new JFrame();
         simulatorFrame.setSize(1200, 800);
         simulatorFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, lowLevelRoute, realWalls));
+        simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, lowLevelRoute, realWalls, realPose));
         if (useManualRouteControl) {
             simulatorFrame.addKeyListener(new KeyboardPlanner(highLevelRoute));
         }

@@ -28,18 +28,19 @@ public class Simulator implements ControllerFunction {
     private final SimulatorLatency<Double> leftControl, rightControl;
     private final SimulatorLatency<Integer> leftTicks, rightTicks;
     private final int cameraInterval;
+    private final double leftSlipChance, rightSlipChance;
 
     private double currentTime = 0.0;
 
     public Simulator(Terrain terrain) {
-        this(terrain, 0.0, 0.0, 0.0, 0.0, 100);
+        this(terrain, 0.0, 0.0, 0.0, 0.0, 100, 0, 0);
     }
 
     public Simulator(
             Terrain terrain,
             double leftControlLatency, double rightControlLatency,
             double leftTickLatency, double rightTickLatency,
-            int cameraInterval
+            int cameraInterval, double leftSlipChance, double rightSlipChance
     ) {
         this.terrain = terrain;
         this.realPose = new DuckiePose();
@@ -55,6 +56,8 @@ public class Simulator implements ControllerFunction {
         this.rightTicks = new SimulatorLatency<>(rightTickLatency, 0);
 
         this.cameraInterval = cameraInterval;
+        this.leftSlipChance = leftSlipChance;
+        this.rightSlipChance = rightSlipChance;
     }
 
     /**
@@ -81,8 +84,12 @@ public class Simulator implements ControllerFunction {
         if (realPose.angle >= 1) realPose.angle -= 1;
         if (realPose.angle < 0) realPose.angle += 1;
 
-        this.exactLeftWheelTicks += WHEEL_TICKS_PER_TURN * deltaTime * leftVelocity / (2 * Math.PI * WHEEL_RADIUS);
-        this.exactRightWheelTicks += WHEEL_TICKS_PER_TURN * deltaTime * rightVelocity / (2 * Math.PI * WHEEL_RADIUS);
+        if (Math.random() >= leftSlipChance) {
+            this.exactLeftWheelTicks += WHEEL_TICKS_PER_TURN * deltaTime * leftVelocity / (2 * Math.PI * WHEEL_RADIUS);
+        }
+        if (Math.random() >= rightSlipChance) {
+            this.exactRightWheelTicks += WHEEL_TICKS_PER_TURN * deltaTime * rightVelocity / (2 * Math.PI * WHEEL_RADIUS);
+        }
         leftTicks.insert(currentTime, (int) exactLeftWheelTicks);
         rightTicks.insert(currentTime, (int) exactRightWheelTicks);
         trackedState.leftWheelEncoder = leftTicks.get(currentTime);
