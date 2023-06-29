@@ -10,11 +10,18 @@ public class WallMapper implements ControllerFunction {
 
     private final DuckieEstimations estimations;
     private final DuckieState trackedState;
+    private final double maxMapError;
+    private final double maxCorrectionError;
     private long lastTimestamp;
 
-    public WallMapper(DuckieEstimations estimations, DuckieState trackedState) {
+    public WallMapper(
+            DuckieEstimations estimations, DuckieState trackedState,
+            double maxMapError, double maxCorrectionError
+    ) {
         this.estimations = estimations;
         this.trackedState = trackedState;
+        this.maxMapError = maxMapError;
+        this.maxCorrectionError = maxCorrectionError;
     }
 
     @Override
@@ -23,11 +30,18 @@ public class WallMapper implements ControllerFunction {
         if (relativeWalls != null && lastTimestamp != relativeWalls.timestamp()) {
             lastTimestamp = relativeWalls.timestamp();
 
-            long startTime = System.currentTimeMillis();
             var snapper = new WallSnapper(relativeWalls.walls(), new WallSnapper.FixedPose(estimations.x, estimations.y, estimations.angle));
-            var snapResult = snapper.snap(0.1, 33, 0.1 * GRID_SIZE, 33);
+            var snapResult = snapper.snap(0.1, 33, 0.01 * GRID_SIZE, 33);
 
-            for (var wall : snapResult.walls()) estimations.walls.add(wall);
+            if (snapResult.error() <= maxMapError && snapResult.walls().size() > 2) {
+                for (var wall : snapResult.walls()) estimations.walls.add(wall);
+            }
+
+            if (snapResult.error() <= maxCorrectionError) {
+                estimations.x = snapResult.correctedPose().x();
+                estimations.y = snapResult.correctedPose().y();
+                estimations.angle = snapResult.correctedPose().angle();
+            }
         }
     }
 }

@@ -60,7 +60,7 @@ public class SimulatorUI {
         } else {
             var simulator = new Simulator(
                     Terrain.IDEAL, 0.0, 0.0, 0.0, 0.0,
-                    100, 0.00, 0.00
+                    100, 0.03, 0.13
             );
             estimations = simulator.estimations;
             controls = simulator.controls;
@@ -143,7 +143,7 @@ public class SimulatorUI {
         updater.addController(averageSpeedEstimator, 1);
 
         var wallUpdater = new ControllerUpdater();
-        wallUpdater.addController(new WallMapper(estimations, trackedState), 1);
+        wallUpdater.addController(new WallMapper(estimations, trackedState, 0.01, 0.01), 1);
 
         var monitorFrame = new JFrame();
         monitorFrame.setSize(800, 500);
