@@ -110,7 +110,7 @@ public class DirectSpeedPIDController implements ControllerFunction {
         if(Math.signum(speedInput) != Math.signum(desiredVelocity.speed)){
             speedInput = 0;
         }
-        desiredWheelSpeed.leftSpeed = 0.3;
-        desiredWheelSpeed.rightSpeed = 0.3;
+        desiredWheelSpeed.leftSpeed = speedInput;
+        desiredWheelSpeed.rightSpeed = speedInput;
     }
 }

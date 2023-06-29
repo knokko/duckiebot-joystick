@@ -74,9 +74,7 @@ public class SimulatorUI {
         //var lowLevelRoute = new ConcurrentLinkedQueue<DesiredPose>();
         var lowLevelRoute = new LinkedList<DesiredPose>();
         var highLevelRoute = new LinkedBlockingQueue<GridPosition>();
-        lowLevelRoute.add(new DesiredPose(0.4, 0.5 * DuckieBot.GRID_SIZE, 0, false));
-        // lowLevelRoute.add(new DesiredPose(10.4, 0.5 * DuckieBot.GRID_SIZE, 0, false)); // Straight forward
-        lowLevelRoute.add(new DesiredPose(0.4, 10.5 * DuckieBot.GRID_SIZE, 0.25, false)); // Straight forward
+        //lowLevelRoute.add(new DesiredPose(0.4, 0.5 * DuckieBot.GRID_SIZE, 0, false));
 //        lowLevelRoute.add(new DesiredPose(0.95, 5 * GRID_SIZE, 0.25, false));
 //        lowLevelRoute.add(new DesiredPose(0.5, 0.5, 0.25, false));
 //        lowLevelRoute.add(new DesiredPose(0.5, 0.9, 0.25, false));
@@ -107,9 +105,9 @@ public class SimulatorUI {
 
         var poseEstimator = new PoseEstimator(trackedState, estimations);
 
-        //var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
+        var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
         //var routeController = new StepController(lowLevelRoute, desiredVelocity, estimations, controls, 5.0);
-        var routeController = new KeyboardController(desiredVelocity, estimations, controls);
+        //var routeController = new KeyboardController(desiredVelocity, estimations, controls);
         var differentialDriver = new DifferentialDriver(
                 desiredVelocity, desiredWheelSpeed, estimations, controls, parameters.anglePID
         );
@@ -163,7 +161,7 @@ public class SimulatorUI {
         simulatorFrame.setSize(1200, 800);
         simulatorFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, lowLevelRoute, realWalls, realPose));
-        simulatorFrame.addKeyListener(routeController);
+        //simulatorFrame.addKeyListener(routeController);
         if (useManualRouteControl) {
             simulatorFrame.addKeyListener(new KeyboardPlanner(highLevelRoute));
         }
