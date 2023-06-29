@@ -20,6 +20,7 @@ public class DirectSpeedPIDController implements ControllerFunction {
     // Ramping parameters
     private double setPoint = 0;
     private double rampingSpeed = 1;
+    private double speedInput = 0;
     private int derivativeBackPropagator = 5;
 
     private LinkedList<ErrorSample> errorList = new LinkedList<>();
@@ -60,7 +61,8 @@ public class DirectSpeedPIDController implements ControllerFunction {
 
         //setPoint +=                sign                      *                      magnitude
         setPoint += Math.signum(desiredVelocity.speed - speed) * Math.min(abs((desiredVelocity.speed - speed)), rampingSpeed * deltaTime);
-        double errorSpeed = setPoint - speed;
+        //double errorSpeed = setPoint - speed;
+        double errorSpeed = desiredVelocity.speed - speed;
 
         // Window the error list
         if(errorList.size() > 10000){
@@ -102,9 +104,12 @@ public class DirectSpeedPIDController implements ControllerFunction {
         pid.correctionI = correctionI;
         pid.correctionD = correctionD;
 
-        double speedInput = correctionP + correctionI + correctionD;
+        speedInput += correctionP*deltaTime + correctionI + correctionD*deltaTime*deltaTime;
 
         // TODO Ensure that this stays in range [-maxSpeed, maxSpeed]
+        if(Math.signum(speedInput) != Math.signum(desiredVelocity.speed)){
+            speedInput = 0;
+        }
         desiredWheelSpeed.leftSpeed = speedInput;
         desiredWheelSpeed.rightSpeed = speedInput;
     }

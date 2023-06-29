@@ -152,7 +152,7 @@ public class SimulatorUI {
         monitorFrame.setAutoRequestFocus(false);
         monitorFrame.setLocation(1200, 200);
         monitorFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        var pid = parameters.anglePID;
+        var pid = parameters.speedPID;
         monitorFrame.add(new MonitorBoard(trackedState, controls, estimations, desiredWheelSpeed, pid));
         monitorFrame.addKeyListener(new PIDKeyboardTuner(pid));
         monitorFrame.setVisible(true);
