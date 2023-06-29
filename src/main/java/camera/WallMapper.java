@@ -38,7 +38,7 @@ public class WallMapper implements ControllerFunction {
                     estimations.y + CAMERA_OFFSET * sin(angleRad),
                     estimations.angle
             ));
-            var snapResult = snapper.snap(0.01, 33, 0.01 * GRID_SIZE, 33);
+            var snapResult = snapper.snap(0.03, 33, 0.02 * GRID_SIZE, 33);
 
             if (snapResult.error() <= maxMapError && snapResult.walls().size() > 2) {
                 for (var wall : snapResult.walls()) estimations.walls.add(wall);

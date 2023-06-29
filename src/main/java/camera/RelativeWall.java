@@ -24,4 +24,14 @@ public record RelativeWall(double distance, double angle) {
         double angle = atan2(dy, dx) / (2 * PI) - camera.angle();
         return new RelativeWall(distance, angle);
     }
+
+    public static RelativeWall noisyFromGrid(GridWall wall, WallSnapper.FixedPose camera, double maxNoise) {
+        RelativeWall exact = fromGrid(wall, camera);
+        double noisyDistance = exact.distance() * (1 - maxNoise + 2 * maxNoise * Math.random());
+        double maxAngleNoise = noisyDistance * 0.02;
+        double noisyAngle = exact.angle * (1 - maxAngleNoise + 2 * maxAngleNoise * Math.random());
+        if (noisyAngle < -0.5) noisyAngle += 1;
+        if (noisyAngle > 0.5) noisyAngle -= 1;
+        return new RelativeWall(noisyDistance, noisyAngle);
+    }
 }

@@ -28,18 +28,21 @@ public class Simulator implements ControllerFunction {
     private final SimulatorLatency<Integer> leftTicks, rightTicks;
     private final int cameraInterval;
     private final double leftSlipChance, rightSlipChance;
+    private final double maxCameraNoise;
 
     private double currentTime = 0.0;
 
     public Simulator(Terrain terrain) {
-        this(terrain, 0.0, 0.0, 0.0, 0.0, 100, 0, 0);
+        this(terrain, 0.0, 0.0, 0.0, 0.0,
+                100, 0, 0, 0
+        );
     }
 
     public Simulator(
             Terrain terrain,
             double leftControlLatency, double rightControlLatency,
             double leftTickLatency, double rightTickLatency,
-            int cameraInterval, double leftSlipChance, double rightSlipChance
+            int cameraInterval, double leftSlipChance, double rightSlipChance, double maxCameraNoise
     ) {
         this.terrain = terrain;
         this.realPose = new DuckiePose();
@@ -57,6 +60,7 @@ public class Simulator implements ControllerFunction {
         this.cameraInterval = cameraInterval;
         this.leftSlipChance = leftSlipChance;
         this.rightSlipChance = rightSlipChance;
+        this.maxCameraNoise = maxCameraNoise;
     }
 
     /**
@@ -107,7 +111,7 @@ public class Simulator implements ControllerFunction {
             );
             var visibleWalls = walls.findVisibleWalls(cameraPose);
             var relativeWalls = visibleWalls.stream().map(
-                    wall -> RelativeWall.fromGrid(wall, cameraPose)
+                    wall -> RelativeWall.noisyFromGrid(wall, cameraPose, maxCameraNoise)
             ).collect(Collectors.toSet());
             trackedState.cameraWalls = new CameraWalls(currentTime, relativeWalls);
         }
