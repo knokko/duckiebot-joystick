@@ -58,7 +58,7 @@ public class DifferentialDriver implements ControllerFunction {
         //double rampingSpeed = 0.9 - 0.85 * (abs(estimations.leftSpeed) + abs(estimations.rightSpeed)) * 0.5;
         double rampingSpeed = 0.6;
 
-        setPoint += Math.signum(angleToGoal) * Math.min(abs(smartAngle(desiredVelocity.angle - setPoint)), rampingSpeed * deltaTime);
+        setPoint += Math.signum(smartAngle(desiredVelocity.angle - setPoint)) * Math.min(abs(smartAngle(desiredVelocity.angle - setPoint)), rampingSpeed * deltaTime);
         if (setPoint < 0) setPoint += 1;
         if (setPoint > 1) setPoint -= 1;
 
