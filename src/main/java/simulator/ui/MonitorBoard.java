@@ -1,5 +1,6 @@
 package simulator.ui;
 
+import controller.desired.DesiredVelocity;
 import controller.desired.DesiredWheelSpeed;
 import controller.estimation.DuckieEstimations;
 import controller.parameters.PIDParameters;
@@ -23,7 +24,7 @@ public class MonitorBoard extends JPanel {
 
     public MonitorBoard(
             DuckieState trackedState, DuckieControls controls, DuckieEstimations estimations,
-            DesiredWheelSpeed desiredWheelSpeed, PIDParameters pid
+            DesiredVelocity desiredVelocity, PIDParameters pid
     ) {
         this.estimations = estimations;
         graphSequences.add(new GraphSequence("Left control input", new Color(200, 150, 0), () -> controls.velLeft));
@@ -54,7 +55,7 @@ public class MonitorBoard extends JPanel {
                 return poly.getDerivative().get((System.currentTimeMillis() - startTime) * 0.001);
             } else return 0.0;
         }));
-        graphSequences.add(new GraphSequence("Desired average speed", Color.MAGENTA, () -> 0.3));
+        graphSequences.add(new GraphSequence("Desired average speed", Color.MAGENTA, () -> desiredVelocity.speed));
 
 //        graphSequences.add(new GraphSequence("Left wheel estimator", new Color(200, 0, 200), () -> {
 //            if (initialLeftTicks != null) {

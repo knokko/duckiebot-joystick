@@ -60,7 +60,7 @@ public class SimulatorUI {
             connection.start();
         } else {
             var simulator = new Simulator(
-                    Terrain.IDEAL, 0.0, 0.0, 0.0, 0.0,
+                    Terrain.NOISY_SLOW, 0.0, 0.0, 0.0, 0.0,
                     100, 0.00, 0.00, 0.05
             );
             estimations = simulator.estimations;
@@ -153,7 +153,7 @@ public class SimulatorUI {
         monitorFrame.setLocation(1200, 200);
         monitorFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         var pid = parameters.anglePID;
-        monitorFrame.add(new MonitorBoard(trackedState, controls, estimations, desiredWheelSpeed, pid));
+        monitorFrame.add(new MonitorBoard(trackedState, controls, estimations, desiredVelocity, pid));
         monitorFrame.addKeyListener(new PIDKeyboardTuner(pid));
         monitorFrame.setVisible(true);
 

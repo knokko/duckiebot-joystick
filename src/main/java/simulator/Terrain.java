@@ -12,13 +12,14 @@ public class Terrain {
      */
     public static final Terrain IDEAL = new Terrain(motorSignal -> motorSignal);
 
-    public static final Terrain SIMPLE_SLOW = new Terrain(motorSignal -> 0.3 * motorSignal);
+    public static final Terrain SIMPLE_VERY_SLOW = new Terrain(motorSignal -> 0.3 * motorSignal);
+    public static final Terrain SIMPLE_SLOW = new Terrain(motorThrottle -> 0.6 * motorThrottle);
     public static final Terrain SIMPLE_FAST = new Terrain(motorSignal -> 1.6 * motorSignal);
 
     public static final Terrain SLOPED_SLOW = new Terrain(motorSignal -> max(0.0, 0.6 * motorSignal - 0.2));
     public static final Terrain SLOPED_FAST = new Terrain(motorSignal -> max(0.0, 1.8 * motorSignal - 0.1));
 
-    public static final Terrain NOISY_SLOW = new Terrain(motorSignal -> max(0, (0.2 * Math.random() + 0.5) * motorSignal - 0.1));
+    public static final Terrain NOISY_SLOW = new Terrain(motorSignal -> max(0, (0.3 * Math.random() + 0.6) * motorSignal - 0.1));
     public static final Terrain VERY_NOISY_SLOW = new Terrain(motorSignal -> max(0, (0.4 * Math.random() + 0.4) * motorSignal - 0.1));
     public static final Terrain NOISY_FAST = new Terrain(motorSignal -> (0.4 * Math.random() + 1.2) * motorSignal);
     public static final Terrain VERY_NOISY_FAST = new Terrain(motorSignal -> (0.8 * Math.random() + 0.8) * motorSignal);

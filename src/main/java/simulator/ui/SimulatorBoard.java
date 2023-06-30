@@ -45,11 +45,17 @@ public class SimulatorBoard extends JPanel {
     private final java.util.List<Point2D.Double> estimatedVisitedPoints = new ArrayList<>();
     private final java.util.List<Point2D.Double> realVisitedPoints = new ArrayList<>();
 
+    private int offsetX() {
+        return getWidth() / 2;
+    }
+
+    private int offsetY() {
+        return getHeight() / 2;
+    }
+
     @Override
     public void paint(Graphics graphics) {
         super.paint(graphics);
-        int offsetX = getWidth() / 2;
-        int offsetY = getHeight() / 2;
 
         Color backgroundColor = Color.LIGHT_GRAY;
         graphics.setColor(backgroundColor);
@@ -58,18 +64,18 @@ public class SimulatorBoard extends JPanel {
         Color gridColor = Color.GRAY;
         graphics.setColor(gridColor);
         for (int rawX = -20; rawX <= 20; rawX++) {
-            int x = (int) Math.round(offsetX + rawX * 100 * GRID_SIZE * SCALE);
+            int x = (int) Math.round(offsetX() + rawX * 100 * GRID_SIZE * SCALE);
             graphics.drawLine(x, 0, x, getHeight());
         }
         for (int rawY = -20; rawY <= 20; rawY++) {
-            int y = (int) Math.round(offsetY - rawY * 100 * GRID_SIZE * SCALE);
+            int y = (int) Math.round(offsetY() - rawY * 100 * GRID_SIZE * SCALE);
             graphics.drawLine(0, y, getWidth(), y);
         }
 
         Color axesColor = Color.BLACK;
         graphics.setColor(axesColor);
-        graphics.drawLine(0, offsetY, getWidth(), offsetY);
-        graphics.drawLine(offsetX, 0, offsetX, getHeight());
+        graphics.drawLine(0, offsetY(), getWidth(), offsetY());
+        graphics.drawLine(offsetX(), 0, offsetX(), getHeight());
 
         synchronized (estimations) {
             double x = estimations.x;
@@ -190,10 +196,10 @@ public class SimulatorBoard extends JPanel {
     }
 
     private int transformRealX(double realX) {
-        return (int) (100 * SCALE * realX + getWidth() / 2);
+        return (int) (100 * SCALE * realX + offsetX());
     }
 
     private int transformRealY(double realY) {
-        return getHeight() / 2 - (int) (100 * SCALE * realY);
+        return offsetY() - (int) (100 * SCALE * realY);
     }
 }
