@@ -1,6 +1,5 @@
 package simulator.ui;
 
-import camera.WallMapper;
 import controller.*;
 import controller.desired.DesiredPose;
 import controller.desired.DesiredVelocity;
@@ -12,7 +11,6 @@ import controller.estimation.SpeedPredictor;
 import controller.parameters.DuckieParameters;
 import controller.updater.ControllerFunction;
 import controller.updater.ControllerUpdater;
-import controller.util.DuckieBot;
 import joystick.client.JoystickClientConnection;
 import planner.GridPosition;
 import planner.KeyboardPlanner;

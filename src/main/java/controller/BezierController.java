@@ -29,14 +29,6 @@ public class BezierController implements ControllerFunction {
 
     @Override
     public void update(double deltaTime) {
-        if (nextPoseTimer > 0) {
-            nextPoseTimer -= deltaTime;
-            if (nextPoseTimer <= 0) {
-                nextPoseTimer = 0;
-                route.poll();
-            }
-        }
-
         var destinationPose = route.peek();
 
         // If the pose is cancelled, we should pick the next pose instead
@@ -55,7 +47,7 @@ public class BezierController implements ControllerFunction {
             return;
         }
 
-        double speed = 0.3;
+        double speed = 0.2;
         if (destinationPose.backward) speed = -speed;
 
         var dx = destinationPose.x - estimations.x;
@@ -70,8 +62,8 @@ public class BezierController implements ControllerFunction {
         double y1 = estimations.y;
 
         double ownAngleRad = estimations.angle * 2 * Math.PI;
-        double x2 = x1 + 0.5 * distance * Math.signum(speed) * cos(ownAngleRad);
-        double y2 = y1 + 0.5 * distance * Math.signum(speed) * sin(ownAngleRad);
+        double x2 = x1 + 0.1 * distance * Math.signum(speed) * cos(ownAngleRad);
+        double y2 = y1 + 0.1 * distance * Math.signum(speed) * sin(ownAngleRad);
 
         double x4 = destinationPose.x;
         double y4 = destinationPose.y;
@@ -81,8 +73,12 @@ public class BezierController implements ControllerFunction {
         double y3 = y4 - 0.5 * distance * Math.signum(speed) * sin(destAngleRad);
 
         double destinationTime = distance / abs(speed);
-        double timeStep = 0.15;
+        double timeStep = 0.25;
         double t = timeStep / destinationTime;
+        if (t >= 1) {
+            t = 1;
+            route.poll();
+        }
 
         double desiredDx = 3 * (1.0 - t) * (1.0 - t) * (x2 - x1) + 6 * (1.0 - t) * t * (x3 - x2) + 3 * t * t * (x4 - x3);
         double desiredDy = 3 * (1.0 - t) * (1.0 - t) * (y2 - y1) + 6 * (1.0 - t) * t * (y3 - y2) + 3 * t * t * (y4 - y3);
