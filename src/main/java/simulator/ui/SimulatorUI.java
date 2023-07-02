@@ -25,6 +25,8 @@ import state.DuckieState;
 
 import javax.swing.*;
 
+import camera.WallMapper;
+
 import java.util.LinkedList;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -59,8 +61,8 @@ public class SimulatorUI {
             connection.start();
         } else {
             var simulator = new Simulator(
-                    Terrain.VERY_NOISY_SLOW, 0.0, 0.0, 0.0, 0.0,
-                    100, 0.00, 0.00, 0.05
+                    Terrain.IDEAL, 0.0, 0.0, 0.0, 0.0,
+                    100, 0.00, 0.00, 0.00
             );
             estimations = simulator.estimations;
             controls = simulator.controls;
