@@ -157,7 +157,7 @@ public class SimulatorUI {
 
         var simulatorFrame = new JFrame();
         simulatorFrame.setSize(1200, 800);
-        simulatorFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        simulatorFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, lowLevelRoute, realWalls, realPose));
         //simulatorFrame.addKeyListener(routeController);
         if (useManualRouteControl) {
