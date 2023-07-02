@@ -157,14 +157,16 @@ public class MazePlanner implements ControllerFunction  {
         currentCell = cellMap[currentX][currentY];
     }
 
-    public void explore(){      
+    public void explore(){        
+        Cell.WallFlag newDirection = WallFlag.Up;  // Up is just a placeholder
+        Boolean markCell = false;
         if(currentCell.isJunction()){
+            System.out.println("Junction");
             // If the current cell is a junction, mark where we came from
             cellMap[previousX][previousY].visitCount++;
             /////////////////////////////////////////////////////////////////////////////////////////////////////
             //If only the entrance you just came from is marked, pick an arbitrary unmarked entrance, if any.  //
             /////////////////////////////////////////////////////////////////////////////////////////////////////
-
             // Check the possible directions
             List<Cell.WallFlag> posibleDirections = new ArrayList<Cell.WallFlag>();
             if(!currentCell.walls.contains(Cell.WallFlag.Up) && cellMap[currentX][currentY + 1].visitCount == 0){
@@ -180,52 +182,103 @@ public class MazePlanner implements ControllerFunction  {
                 posibleDirections.add(Cell.WallFlag.Right);
             }
 
-            // Pick a random valid one
-            Cell.WallFlag  randomDirection = WallFlag.Up; // Up is just a placeholder
+            // Pick any entrance with the fewest marks (zero if possible, else one).
             if(posibleDirections.size() == 0){
-                // We are stuck, we need to backtrack
-                System.out.println("We are stuck, we need to backtrack");
+                // Find the dirrection of the surrounding cell (up, down, left, right) with the least visits
+                int minVisits = 10;
+                Cell.WallFlag minDirection = Cell.WallFlag.Up;
+                if(cellMap[currentX][currentY + 1].visitCount < minVisits && !currentCell.walls.contains(Cell.WallFlag.Up)){
+                    minVisits = cellMap[currentX][currentY + 1].visitCount;
+                    minDirection = Cell.WallFlag.Up;
+                }
+                if(cellMap[currentX][currentY - 1].visitCount < minVisits && !currentCell.walls.contains(Cell.WallFlag.Down)){
+                    minVisits = cellMap[currentX][currentY - 1].visitCount;
+                    minDirection = Cell.WallFlag.Down;
+                }
+                if(cellMap[currentX - 1][currentY].visitCount < minVisits && !currentCell.walls.contains(Cell.WallFlag.Left)){
+                    minVisits = cellMap[currentX - 1][currentY].visitCount;
+                    minDirection = Cell.WallFlag.Left;
+                }
+                if(cellMap[currentX + 1][currentY].visitCount < minVisits && !currentCell.walls.contains(Cell.WallFlag.Right)){
+                    minVisits = cellMap[currentX + 1][currentY].visitCount;
+                    minDirection = Cell.WallFlag.Right;
+                }
+                // Go in that direction
+                newDirection = minDirection;
+            }
             // Perfer to go straight
-            } else if (previousX < currentX && posibleDirections.contains(Cell.WallFlag.Right)){
-                randomDirection = Cell.WallFlag.Right;
+            else if (previousX < currentX && posibleDirections.contains(Cell.WallFlag.Right)){
+                newDirection = Cell.WallFlag.Right;
             } else if (previousX > currentX && posibleDirections.contains(Cell.WallFlag.Left)){
-                randomDirection = Cell.WallFlag.Left;
+                newDirection = Cell.WallFlag.Left;
             } else if (previousY < currentY && posibleDirections.contains(Cell.WallFlag.Up)){
-                randomDirection = Cell.WallFlag.Up;
+                newDirection = Cell.WallFlag.Up;
             } else if (previousY > currentY && posibleDirections.contains(Cell.WallFlag.Down)){
-                randomDirection = Cell.WallFlag.Down;
+                newDirection = Cell.WallFlag.Down;
             } else {
                 // Pick a random direction
                 Random rand = new Random();
-                randomDirection = posibleDirections.get(rand.nextInt(posibleDirections.size()));
+                newDirection = posibleDirections.get(rand.nextInt(posibleDirections.size()));
             }
-
-            // Calculate the new position
-            byte newX = (byte)currentX;
-            byte newY = (byte)currentY;
-            switch(randomDirection){
-                case Up:
-                    newY++;
-                    break;
-                case Down:
-                    newY--;
-                    break;
-                case Left:
-                    newX--;
-                    break;
-                case Right:
-                    newX++;
-                    break;
-            }
-
-            // Mark where we are going to
-            cellMap[newX][newY].visitCount++;
             
-            // Add  the new route
-            goalX = newX;
-            goalY = newY;
-            highLevelRoute.add(createGridPosition(newX, newY));
+            // Mark where we are going to
+            markCell = true;
         }
+         else if (currentCell.walls.size() == 3){
+            System.out.println("Turn around");
+             cellMap[previousX][previousY].visitCount++;
+             // Dead end, turn around
+             var lottaWalls = EnumSet.complementOf(currentCell.walls);
+             newDirection = lottaWalls.iterator().next();
+             // and mark where we are going to
+             markCell = true;
+         }
+        else{
+            System.out.println("Straight");
+            // Take the current wall and add the wall we came from to the current cell
+            var currentWalls = EnumSet.copyOf(currentCell.walls);
+            if (previousX < currentX){
+                currentWalls.add(Cell.WallFlag.Left);
+            } else if (previousX > currentX){
+                currentWalls.add(Cell.WallFlag.Right);
+            } else if (previousY < currentY){
+                currentWalls.add(Cell.WallFlag.Down);
+            } else if (previousY > currentY){
+                currentWalls.add(Cell.WallFlag.Up);
+            }
+
+            currentWalls = EnumSet.complementOf(currentWalls);
+            newDirection = currentWalls.iterator().next();
+        }
+
+        // Calculate the new position
+        int newX = currentX;
+        int newY = currentY;
+        switch(newDirection){
+            case Up:
+                newY++;
+                break;
+            case Down:
+                newY--;
+                break;
+            case Left:
+                newX--;
+                break;
+            case Right:
+                newX++;
+                break;
+        }
+
+        // Add  the new route
+        goalX = newX;
+        goalY = newY;
+
+        // Mark if needed
+        if(markCell){
+            cellMap[newX][newY].visitCount++;
+        }
+
+        highLevelRoute.add(createGridPosition(newX, newY));
     }
     private GridPosition createGridPosition(int x, int y){
         return new GridPosition((byte)(x-X_OFFSET), (byte)(y-Y_OFFSET));
