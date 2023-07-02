@@ -4,6 +4,7 @@ import controller.desired.DesiredPose;
 import controller.desired.DesiredVelocity;
 import controller.estimation.DuckieEstimations;
 import controller.updater.ControllerFunction;
+import controller.util.BezierCurve;
 
 import java.util.Queue;
 
@@ -16,7 +17,7 @@ public class BezierController implements ControllerFunction {
     private final DesiredVelocity desiredVelocity;
     private final DuckieEstimations estimations;
 
-    private double nextPoseTimer;
+    private BezierCurve curve;
 
     public BezierController(
             Queue<DesiredPose> route, DesiredVelocity desiredVelocity,
@@ -25,6 +26,10 @@ public class BezierController implements ControllerFunction {
         this.route = route;
         this.desiredVelocity = desiredVelocity;
         this.estimations = estimations;
+    }
+
+    public BezierCurve getCurve() {
+        return curve;
     }
 
     @Override
@@ -54,16 +59,12 @@ public class BezierController implements ControllerFunction {
         var dy = destinationPose.y - estimations.y;
         var distance = sqrt(dx * dx + dy * dy);
 
-        if (distance < 0.08 && nextPoseTimer == 0.0) {
-            nextPoseTimer = abs(distance * 0.8 / speed);
-        }
-
         double x1 = estimations.x;
         double y1 = estimations.y;
 
         double ownAngleRad = estimations.angle * 2 * Math.PI;
-        double x2 = x1 + 0.1 * distance * Math.signum(speed) * cos(ownAngleRad);
-        double y2 = y1 + 0.1 * distance * Math.signum(speed) * sin(ownAngleRad);
+        double x2 = x1 + 0.3 * distance * Math.signum(speed) * cos(ownAngleRad);
+        double y2 = y1 + 0.3 * distance * Math.signum(speed) * sin(ownAngleRad);
 
         double x4 = destinationPose.x;
         double y4 = destinationPose.y;
@@ -72,16 +73,18 @@ public class BezierController implements ControllerFunction {
         double x3 = x4 - 0.5 * distance * Math.signum(speed) * cos(destAngleRad);
         double y3 = y4 - 0.5 * distance * Math.signum(speed) * sin(destAngleRad);
 
+        this.curve = new BezierCurve(x1, y1, x2, y2, x3, y3, x4, y4);
+
         double destinationTime = distance / abs(speed);
-        double timeStep = 0.25;
+        double timeStep = 0.35;
         double t = timeStep / destinationTime;
         if (t >= 1) {
             t = 1;
             route.poll();
         }
 
-        double desiredDx = 3 * (1.0 - t) * (1.0 - t) * (x2 - x1) + 6 * (1.0 - t) * t * (x3 - x2) + 3 * t * t * (x4 - x3);
-        double desiredDy = 3 * (1.0 - t) * (1.0 - t) * (y2 - y1) + 6 * (1.0 - t) * t * (y3 - y2) + 3 * t * t * (y4 - y3);
+        double desiredDx = curve.getX(t) - estimations.x;
+        double desiredDy = curve.getY(t) - estimations.y;
 
         double desiredAngle;
         if (speed >= 0.0) {
