@@ -23,7 +23,7 @@ public class Simulator implements ControllerFunction {
     private double exactLeftWheelTicks, exactRightWheelTicks;
     public final DuckieControls controls;
     public final DuckieState trackedState;
-    public final WallGrid walls = SimulatorMaze.createTestingWallGrid5x5();
+    public final WallGrid walls = SimulatorMaze.createTestingWallGrid8x8();
 
     private final SimulatorLatency<Double> leftControl, rightControl;
     private final SimulatorLatency<Integer> leftTicks, rightTicks;

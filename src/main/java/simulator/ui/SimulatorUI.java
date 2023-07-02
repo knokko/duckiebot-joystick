@@ -14,6 +14,7 @@ import controller.updater.ControllerUpdater;
 import joystick.client.JoystickClientConnection;
 import planner.GridPosition;
 import planner.KeyboardPlanner;
+import planner.MazePlanner;
 import planner.RoutePlanner;
 import simulator.Simulator;
 import simulator.Terrain;
@@ -96,6 +97,7 @@ public class SimulatorUI {
         var desiredWheelSpeed = new DesiredWheelSpeed();
 
         var routePlanner = new RoutePlanner(highLevelRoute, lowLevelRoute);
+        var mazePlanner = new MazePlanner(highLevelRoute, estimations);
 
         Thread routePlannerThread = new Thread(routePlanner::start);
         routePlannerThread.setDaemon(true);
@@ -140,6 +142,7 @@ public class SimulatorUI {
         updater.addController(leftSpeedEstimator, 1);
         updater.addController(rightSpeedEstimator, 1);
         //updater.addController(averageSpeedEstimator, 1);
+        updater.addController(mazePlanner, 10);
 
         var wallUpdater = new ControllerUpdater();
         wallUpdater.addController(new WallMapper(estimations, trackedState, 0.02, 0.0), 1);
