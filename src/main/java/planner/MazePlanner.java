@@ -1,19 +1,34 @@
 package planner;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 
 import controller.estimation.DuckieEstimations;
 import controller.updater.ControllerFunction;
+import planner.MazePlanner.Cell.WallFlag;
+
 import static controller.util.DuckieBot.GRID_SIZE;
+import static planner.GridWall.Axis.*;
 
 public class MazePlanner implements ControllerFunction  {
     private final BlockingQueue<GridPosition> highLevelRoute;
     private final DuckieEstimations estimations;
-    private int[][] tremauxMap;
-    private byte currentX = 0;
-    private byte currentY = 0;
+    private final int MAX_X = 100;
+    private final int MAX_Y = 100;
+    private final int X_OFFSET = 50;
+    private final int Y_OFFSET = 50;
+    private Cell[][] cellMap = new Cell[MAX_X][MAX_Y];
     private Cell currentCell;
+    private int previousX = 0;
+    private int previousY = 0;
+    private int currentX = 0;
+    private int currentY = 0;
+    private int goalX = 0;
+    private int goalY = 0;
+    private Mode mode = Mode.Start;
 
     class Cell{
         enum WallFlag{
@@ -28,98 +43,191 @@ public class MazePlanner implements ControllerFunction  {
 
         public int x;
         public int y;
-        EnumSet<WallFlag> walls;
+        public EnumSet<WallFlag> walls;
+
+        public int visitCount = 0;
 
         public Cell(int x, int y, int wallValue){
             this.x = x;
             this.y = y;
-            this.walls = WallFlag.NO_OPTS;
+            this.walls = EnumSet.noneOf(WallFlag.class);
         }
+
+        public boolean isJunction(){
+        // A junction is a cell with at most one wall
+            return walls.size() < 2;
+         }
     }
 
     enum Mode {
+        Idle,
+        Start,
         Explore,
         Race,
       }
-
-    private Mode mode = Mode.Explore;
       
     public MazePlanner(BlockingQueue<GridPosition> highLevelRoute, DuckieEstimations estimations) {
         this.highLevelRoute = highLevelRoute;
         this.estimations = estimations;
+        this.currentCell = new Cell(X_OFFSET, Y_OFFSET, 0);
 
-        tremauxMap = new int[8][8];
+        // initialize the cell map
+        for(int x = 0; x < MAX_X; x++){
+            for(int y = 0; y < MAX_Y; y++){
+                cellMap[x][y] = new Cell(x, y, 0);
+            }
+        }
     }
 
     @Override
     public void update(double deltaTime) {
-        var previousX = currentX;
-        var previousY = currentY;
-        currentX = (byte)Math.floor(estimations.x / GRID_SIZE);
-        currentY = (byte)Math.floor(estimations.y / GRID_SIZE);
+        previousX = currentX;
+        previousY = currentY;
+        currentX = (int)Math.floor(estimations.x / GRID_SIZE) + X_OFFSET;
+        currentY = (int)Math.floor(estimations.y / GRID_SIZE) + Y_OFFSET;
 
-        if(currentX != previousX || currentY != previousY){
-            updateCell();
-        }
+        boolean newCell = (currentX != previousX) || (currentY != previousY);
+        updateCell();
+
         switch(mode) {
+            case Start:
+                // Start by going forward
+                goalX = currentX + 1;
+                goalY = currentY;
+                highLevelRoute.add(createGridPosition(goalX, goalY));
+
+                mode = Mode.Explore;
+                break;
             case Explore:
-                explore();
+                if(goalX == currentX && goalY == currentY && highLevelRoute.isEmpty()){
+                    explore();
+                }
                 break;
             case Race:
+            case Idle:
             default:
                 break;
         }
     }
 
     void updateCell(){
-        currentCell = new Cell(currentX, currentY, 0);
+        // Local coordinates
+        var localX = currentX - X_OFFSET;
+        var localY = currentY - Y_OFFSET;
 
         var walls = estimations.walls.copyWalls();
         for(var wall : walls)
         {
             // Look at the walls of the current grid for bottom and ???
-            if(wall.gridX() == currentX && wall.gridY() == currentY)
+            if(wall.gridX() == localX && wall.gridY() == localY)
             {
                 switch(wall.axis()){
                     case Y:
-                        if(wall.gridX() > currentX)
-                        currentCell.walls.add(Cell.WallFlag.Left);
-                         System.out.println("Left Wall at " + currentX + ", " + currentY);
+                        if(!cellMap[currentX][currentY].walls.contains(Cell.WallFlag.Left)){
+                            System.out.println("Left Wall at " + localX + ", " + localY);
+                            cellMap[currentX][currentY].walls.add(Cell.WallFlag.Left);
+                        }
                         break;
                     case X:
-                        currentCell.walls.add(Cell.WallFlag.Down);
-                        System.out.println("Bottom Wall at " + currentX + ", " + currentY);
+                        if(!cellMap[currentX][currentY].walls.contains(Cell.WallFlag.Down)){
+                            System.out.println("Bottom Wall at " + localX + ", " + localY);
+                            cellMap[currentX][currentY].walls.add(Cell.WallFlag.Down);
+                        }
                         break;
                 }
             }
             // Look at the tile above to find the top wall
-            else if(wall.gridX() == currentX && wall.gridY() == currentY + 1)
+            else if(wall.gridX() == localX && wall.gridY() == localY + 1 && wall.axis() == X)
             {
-                currentCell.walls.add(Cell.WallFlag.Up);
-                System.out.println("Up Wall at " + currentX + ", " + currentY);
+                if(!cellMap[currentX][currentY].walls.contains(Cell.WallFlag.Up)){
+                    System.out.println("Up Wall at " + localX + ", " + localY);
+                    cellMap[currentX][currentY].walls.add(Cell.WallFlag.Up);
+                }
             }
             // Look at the tile to the right to find the right wall
-            else if(wall.gridX() == currentX + 1 && wall.gridY() == currentY)
+            else if(wall.gridX() == localX + 1 && wall.gridY() == localY && wall.axis() == Y)
             {
-                currentCell.walls.add(Cell.WallFlag.Right);
-                System.out.println("Right Wall at " + currentX + ", " + currentY);
+                if(!cellMap[currentX][currentY].walls.contains(Cell.WallFlag.Right)){
+                    System.out.println("Right Wall at " + localX + ", " + localY);
+                    cellMap[currentX][currentY].walls.add(Cell.WallFlag.Right);
+                }
             }
         }
 
+        currentCell = cellMap[currentX][currentY];
     }
 
-    public void explore(){
-        var walls = estimations.walls.copyWalls();
-        for(var wall : walls)
-        {
-            wall.gridX();
+    public void explore(){      
+        if(currentCell.isJunction()){
+            // If the current cell is a junction, mark where we came from
+            cellMap[previousX][previousY].visitCount++;
+            /////////////////////////////////////////////////////////////////////////////////////////////////////
+            //If only the entrance you just came from is marked, pick an arbitrary unmarked entrance, if any.  //
+            /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            // Check the possible directions
+            List<Cell.WallFlag> posibleDirections = new ArrayList<Cell.WallFlag>();
+            if(!currentCell.walls.contains(Cell.WallFlag.Up) && cellMap[currentX][currentY + 1].visitCount == 0){
+                posibleDirections.add(Cell.WallFlag.Up);
+            }
+            if(!currentCell.walls.contains(Cell.WallFlag.Down) && cellMap[currentX][currentY - 1].visitCount == 0){
+                posibleDirections.add(Cell.WallFlag.Down);
+            }
+            if(!currentCell.walls.contains(Cell.WallFlag.Left) && cellMap[currentX - 1][currentY].visitCount == 0){
+                posibleDirections.add(Cell.WallFlag.Left);
+            }
+            if(!currentCell.walls.contains(Cell.WallFlag.Right) && cellMap[currentX + 1][currentY].visitCount == 0){
+                posibleDirections.add(Cell.WallFlag.Right);
+            }
+
+            // Pick a random valid one
+            Cell.WallFlag  randomDirection = WallFlag.Up; // Up is just a placeholder
+            if(posibleDirections.size() == 0){
+                // We are stuck, we need to backtrack
+                System.out.println("We are stuck, we need to backtrack");
+            // Perfer to go straight
+            } else if (previousX < currentX && posibleDirections.contains(Cell.WallFlag.Right)){
+                randomDirection = Cell.WallFlag.Right;
+            } else if (previousX > currentX && posibleDirections.contains(Cell.WallFlag.Left)){
+                randomDirection = Cell.WallFlag.Left;
+            } else if (previousY < currentY && posibleDirections.contains(Cell.WallFlag.Up)){
+                randomDirection = Cell.WallFlag.Up;
+            } else if (previousY > currentY && posibleDirections.contains(Cell.WallFlag.Down)){
+                randomDirection = Cell.WallFlag.Down;
+            } else {
+                // Pick a random direction
+                Random rand = new Random();
+                randomDirection = posibleDirections.get(rand.nextInt(posibleDirections.size()));
+            }
+
+            // Calculate the new position
+            byte newX = (byte)currentX;
+            byte newY = (byte)currentY;
+            switch(randomDirection){
+                case Up:
+                    newY++;
+                    break;
+                case Down:
+                    newY--;
+                    break;
+                case Left:
+                    newX--;
+                    break;
+                case Right:
+                    newX++;
+                    break;
+            }
+
+            // Mark where we are going to
+            cellMap[newX][newY].visitCount++;
+            
+            // Add  the new route
+            goalX = newX;
+            goalY = newY;
+            highLevelRoute.add(createGridPosition(newX, newY));
         }
-
-
-        byte newPointX = (byte)(currentX + 3);
-        byte newPointY = currentY;
-        highLevelRoute.add(new GridPosition(newPointX, newPointY));
-
-        mode = Mode.Race;
+    }
+    private GridPosition createGridPosition(int x, int y){
+        return new GridPosition((byte)(x-X_OFFSET), (byte)(y-Y_OFFSET));
     }
 }
