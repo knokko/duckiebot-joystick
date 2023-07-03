@@ -223,6 +223,28 @@ public class SimulatorBoard extends JPanel {
                 graphics.fillRect(x - 5, y - length, 10, length);
             }
         }
+        
+        // Draw mapper shizzle
+        for(var cellRow : estimations.cells){
+            for(var cell : cellRow){
+                int x = transformRealX(GRID_SIZE * cell.gridX() + GRID_SIZE * 0.5);
+                int y = transformRealY(GRID_SIZE * cell.gridY() + GRID_SIZE * 0.5);
+
+                // Draw a dot for if the visit count is 1
+                if(cell.visitCount == 1){
+                    graphics.setColor(Color.pink);
+                    graphics.fillOval(x-5, y-5, 10, 10);
+                }
+                
+                // Draw a cross for if the visit count is 2
+                if(cell.visitCount > 1){
+                    graphics.setColor(Color.red);
+                    var blockSize = 35;
+                    graphics.drawLine(x - blockSize, y - blockSize, x + blockSize, y + blockSize);
+                    graphics.drawLine(x - blockSize, y + blockSize, x + blockSize, y - blockSize);
+                }
+            }
+        }
 
         Toolkit.getDefaultToolkit().sync();
     }
