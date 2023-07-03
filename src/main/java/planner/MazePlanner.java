@@ -254,7 +254,7 @@ public class MazePlanner implements ControllerFunction  {
                     highLevelRoute.add(createGridPosition(lastTCrossing.x, lastTCrossing.y));
 
                     // Original
-                    highLevelRoute.add(createGridPosition(currentX, currentY));
+                    highLevelRoute.add(createGridPosition(previousX, previousY));
 
                     // Set the mode
                     mode = Mode.DriveBack;
@@ -277,6 +277,13 @@ public class MazePlanner implements ControllerFunction  {
                             lastTCrossing = null;
                             planAhead = true;
                             mode = Mode.Explore;
+                        }
+                        // Force the last step if needed
+                        else if(estimations.leftSpeed == 0 && estimations.rightSpeed == 0){
+                            // We are stuck, try to get out
+                            System.out.println("Stuck at " + realX + ", " + realY + ". Releasing");
+                            goalX = realX;
+                            goalY = realY;
                         }
                     }
                 case Race:
