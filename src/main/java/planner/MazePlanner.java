@@ -22,6 +22,8 @@ public class MazePlanner implements ControllerFunction  {
     private Cell[][] cellMap = new Cell[MAX_X][MAX_Y];
     private Cell currentCell;
 
+    private List<GridPosition> plannedRoutes = new ArrayList<>();
+
     // The real grid position
     private int realX = 0;
     private int realY = 0;
@@ -56,7 +58,7 @@ public class MazePlanner implements ControllerFunction  {
 
     private Mode mode = Mode.Start;
     private boolean planAhead = false; // Plan ahead flag, used when approaching a wall straight ahead.
-
+    private final int pendelPreventionSize = 4;
 
     private WallFlag lastDirection = WallFlag.Right;
 
@@ -196,6 +198,11 @@ public class MazePlanner implements ControllerFunction  {
                     lastTCrossing = cellMap[goalX][goalY];
                     planAhead = false;
                     mode = Mode.UTurn;
+                }
+
+                // Done
+                if(realX == X_OFFSET && realY == Y_OFFSET && cellMap[X_OFFSET][Y_OFFSET].visitCount > 2){
+                    mode = Mode.Idle;
                 }
                 break;
             case UTurn:
@@ -403,7 +410,19 @@ public class MazePlanner implements ControllerFunction  {
         goalX = newXY[0];
         goalY = newXY[1];
 
-        highLevelRoute.add(createGridPosition(goalX, goalY));
+        // Avoid pendeling routes
+        var newRoutePoint = createGridPosition(goalX, goalY);
+        if(plannedRoutes.size() < pendelPreventionSize || !(plannedRoutes.get(2).equals(newRoutePoint) && plannedRoutes.get(0).equals(newRoutePoint) && plannedRoutes.get(1).equals(plannedRoutes.get(3)))){
+            highLevelRoute.add(newRoutePoint);
+        }
+        else {
+            System.out.println("Avoiding pendeling route");
+        }
+
+        plannedRoutes.add(newRoutePoint);
+        if(plannedRoutes.size() > pendelPreventionSize){
+            plannedRoutes.remove(0);
+        }
     }
     private GridPosition createGridPosition(int x, int y){
         return new GridPosition((byte)(x-X_OFFSET), (byte)(y-Y_OFFSET));
