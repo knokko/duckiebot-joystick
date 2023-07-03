@@ -1,0 +1,55 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "JoystickClient",
+            "request": "launch",
+            "mainClass": "joystick.client.JoystickClient",
+            "projectName": "duckiebot-joystick_e5d46e1a"
+        },
+        {
+            "type": "java",
+            "name": "JoystickServer",
+            "request": "launch",
+            "mainClass": "joystick.server.JoystickServer",
+            "projectName": "duckiebot-joystick_e5d46e1a"
+        },
+        {
+            "type": "java",
+            "name": "SimulatorUI",
+            "request": "launch",
+            "mainClass": "simulator.ui.SimulatorUI",
+            "projectName": "duckiebot-joystick_e5d46e1a",
+            "args": "manual"
+        }
+        ,
+        {
+            "type": "java",
+            "name": "Run on Robot",
+            "request": "launch",
+            "mainClass": "simulator.ui.SimulatorUI",
+            "projectName": "duckiebot-joystick_e5d46e1a",
+            "args": "duckie"
+        },
+        {
+            "type": "java",
+            "name": "Manual on Robot",
+            "request": "launch",
+            "mainClass": "simulator.ui.SimulatorUI",
+            "projectName": "duckiebot-joystick_e5d46e1a",
+            "args": "duckie-manual"
+        }
+    ]
+}
