@@ -105,6 +105,7 @@ public class MazePlanner implements ControllerFunction  {
         Explore,
         Race,
         UTurn,
+        DriveBack,
       }
       
     public MazePlanner(BlockingQueue<GridPosition> highLevelRoute, DuckieEstimations estimations) {
@@ -137,8 +138,7 @@ public class MazePlanner implements ControllerFunction  {
 
             // Planning ahead
             System.out.println("Planning ahead");
-            // TODO: Does backtracking checking prevent a loop when going left right? 
-            if(realX == goalX && realX == goalY || backTracking){
+            if(realX == goalX && realX == goalY){
                 planAhead = false;
             }
         }
@@ -170,7 +170,8 @@ public class MazePlanner implements ControllerFunction  {
                 // If we are in a new cell, mark it only if we are certain percentage in the cell (1.0 = 100% in the center, 0% is from the edge)
                 var inRatioX = Math.abs((Math.abs(estimations.x + GRID_SIZE*0.5) % GRID_SIZE)/GRID_SIZE - 0.5) * 2;
                 var inRatioY = Math.abs((Math.abs(estimations.y + GRID_SIZE*0.5) % GRID_SIZE)/GRID_SIZE - 0.5) * 2;
-                if(newCell && (inRatioX > visitedCellRatio) && (inRatioY > visitedCellRatio)){
+                // Also mark when planning ahead
+                if(newCell && ((inRatioX > visitedCellRatio) && (inRatioY > visitedCellRatio) || planAhead)){
                     System.out.println("New cell at " + realX + ", " + realY);
                     cellMap[realX][realY].visitCount++;
                     newCell = false;
@@ -196,7 +197,7 @@ public class MazePlanner implements ControllerFunction  {
                 }
 
                 // If we are at a T-crossing, turn around
-                if(lastTCrossing != null && cellMap[goalX][goalY].x == lastTCrossing.x && cellMap[goalX][goalY].y == lastTCrossing.y && planAhead){
+                if(lastTCrossing != null && cellMap[goalX][goalY].x == lastTCrossing.x && cellMap[goalX][goalY].y == lastTCrossing.y){
                     System.out.println("Time for a U-turn");
                     mode = Mode.UTurn;
                 }
@@ -235,18 +236,15 @@ public class MazePlanner implements ControllerFunction  {
                     var direction1 = dirList.get(pick);
                     var direction2 = dirList.get((pick+1)%possibleDirections.size());
                     
-                    // T-Cross
-                    highLevelRoute.add(createGridPosition(lastTCrossing.x, lastTCrossing.y));
-                    
                     // Dir1
-                    var dir1XY = xyFromDirection(currentX, currentY, direction1);
+                    var dir1XY = xyFromDirection(lastTCrossing.x, lastTCrossing.y, direction1);
                     highLevelRoute.add(createGridPosition(dir1XY[0], dir1XY[1]));
                     
                     // T-Cross
                     highLevelRoute.add(createGridPosition(lastTCrossing.x, lastTCrossing.y));
                     
                     // Dir2
-                    var dir2XY = xyFromDirection(currentX, currentY, direction2);
+                    var dir2XY = xyFromDirection(lastTCrossing.x, lastTCrossing.y, direction2);
                     highLevelRoute.add(createGridPosition(dir2XY[0], dir2XY[1]));
                     
                     // T-Cross
@@ -254,21 +252,24 @@ public class MazePlanner implements ControllerFunction  {
 
                     // Original
                     highLevelRoute.add(createGridPosition(currentX, currentY));
-                    
-                    backTracking = false;
-                    planAhead = false;
-                }else if (planAhead == false){
-                    // Wait until we are at the crossing
-                    if(currentX == lastTCrossing.x && currentY == lastTCrossing.y){
-                        planAhead = true;
-                    }
+
+                    // Set the mode
+                    mode = Mode.DriveBack;
                 }
-                else{
-                    // Wait until we are back where we came from
-                    if(currentX == goalX && currentY == goalY){
-                        mode = Mode.Explore;
+                case DriveBack:
+                    if(backTracking){
+                        // Wait until we are at the crossing
+                        if(realX == lastTCrossing.x && realY == lastTCrossing.y){
+                            System.out.println("Primed at " + realX + ", " + realY);
+                            backTracking = false;
+                        }
                     }
-                }
+                    else{
+                        // Wait until we are back where we came from
+                        if(realX == goalX && realY == goalY){
+                            mode = Mode.Explore;
+                        }
+                    }
                 case Race:
                 case Idle:
                 default:
