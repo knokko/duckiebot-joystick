@@ -42,10 +42,18 @@ public class MazePlanner implements ControllerFunction  {
     // The last grid position we crossed a T-junction (used for U-turning)
     private Cell lastTCrossing;
 
+    // Indiana Jones mode
+    private boolean backTracking = false;
+
     // The goal grid position
     private int goalX = 0;
     private int goalY = 0;
 
+    // The ratio we need to be in the new cell to consider it visited
+    private double visitedCellRatio = 0.25;
+
+    // Indicates if the are in a new cell
+    private boolean newCell = false;
 
     private Mode mode = Mode.Start;
     private boolean planAhead = false; // Plan ahead flag, used when approaching a wall straight ahead.
@@ -96,6 +104,7 @@ public class MazePlanner implements ControllerFunction  {
         Start,
         Explore,
         Race,
+        UTurn,
       }
       
     public MazePlanner(BlockingQueue<GridPosition> highLevelRoute, DuckieEstimations estimations) {
@@ -117,7 +126,7 @@ public class MazePlanner implements ControllerFunction  {
         // Get the position
         prevRealX = realX;
         prevRealY = realY;
-        realX = (int)Math.floor(estimations.x / GRID_SIZE) + X_OFFSET;;
+        realX = (int)Math.floor(estimations.x / GRID_SIZE) + X_OFFSET;
         realY = (int)Math.floor(estimations.y / GRID_SIZE) + Y_OFFSET;
 
         if(planAhead){
@@ -128,7 +137,8 @@ public class MazePlanner implements ControllerFunction  {
 
             // Planning ahead
             System.out.println("Planning ahead");
-            if(previousX == goalX && previousY == goalY){
+            // TODO: Does backtracking checking prevent a loop when going left right? 
+            if(realX == goalX && realX == goalY || backTracking){
                 planAhead = false;
             }
         }
@@ -140,7 +150,11 @@ public class MazePlanner implements ControllerFunction  {
         }
         currentCell = cellMap[currentX][currentY];
             
-        boolean newCell = (prevRealX != realX) || (prevRealY != realY);
+        // Only count new cells we are a certain percentage in
+
+        if((prevRealX != realX) || (prevRealY != realY)){
+            newCell = true;
+        }
         updateWalls();
 
         switch(mode) {
@@ -153,12 +167,25 @@ public class MazePlanner implements ControllerFunction  {
                 mode = Mode.Explore;
                 break;
             case Explore:
-                // If we are in a new cell, mark it
-                if(newCell){
+                // If we are in a new cell, mark it only if we are certain percentage in the cell (1.0 = 100% in the center, 0% is from the edge)
+                var inRatioX = Math.abs((Math.abs(estimations.x + GRID_SIZE*0.5) % GRID_SIZE)/GRID_SIZE - 0.5) * 2;
+                var inRatioY = Math.abs((Math.abs(estimations.y + GRID_SIZE*0.5) % GRID_SIZE)/GRID_SIZE - 0.5) * 2;
+                if(newCell && (inRatioX > visitedCellRatio) && (inRatioY > visitedCellRatio)){
                     System.out.println("New cell at " + realX + ", " + realY);
                     cellMap[realX][realY].visitCount++;
+                    newCell = false;
                 }
 
+                // Mark T-crossings we have passed forward
+                if(cellMap[realX][realY].walls.size() == 1 && estimations.leftSpeed > 0 && estimations.rightSpeed > 0){
+                    // Only update if we are finding a new one
+                    if(lastTCrossing == null || lastTCrossing.x != realX || lastTCrossing.y != realY){
+                        System.out.println("T-crossing at " + realX + ", " + realY);
+                    }
+                    lastTCrossing = cellMap[realX][realY];
+                }
+
+                // Only explore if we reached our goal
                 if(goalX == currentX && goalY == currentY && highLevelRoute.isEmpty()){
                     explore();
                     // Check if we need to plan ahead
@@ -167,10 +194,84 @@ public class MazePlanner implements ControllerFunction  {
                     // Keep updating incase we find new walls
                     planAhead = cellMap[goalX][goalY].walls.contains(lastDirection);
                 }
+
+                // If we are at a T-crossing, turn around
+                if(lastTCrossing != null && cellMap[goalX][goalY].x == lastTCrossing.x && cellMap[goalX][goalY].y == lastTCrossing.y && planAhead){
+                    System.out.println("Time for a U-turn");
+                    mode = Mode.UTurn;
+                }
                 break;
-            case Race:
-            case Idle:
-            default:
+            case UTurn:
+                if(backTracking){
+                    // We need to track where we came from
+                    goalX = currentX;
+                    goalY = currentY;
+
+                    // Get the alternative directions we need to go
+                    var possibleDirections = EnumSet.complementOf(lastTCrossing.walls.clone());
+                    // Remove the inverse of the last direction
+                    switch(lastDirection){
+                        case Up:
+                            possibleDirections.remove(WallFlag.Down);
+                            break;
+                        case Down:
+                            possibleDirections.remove(WallFlag.Up);
+                            break;
+                        case Left:
+                            possibleDirections.remove(WallFlag.Right);
+                            break;
+                        case Right:
+                            possibleDirections.remove(WallFlag.Left);
+                            break;
+                    }
+                    
+                    // Pick a random direction
+                    List<Cell.WallFlag> dirList = new ArrayList<Cell.WallFlag>();
+                    for (WallFlag flag : possibleDirections) {
+                        dirList.add(flag);
+                    }
+                    Random rand = new Random();
+                    var pick = rand.nextInt(possibleDirections.size());
+                    var direction1 = dirList.get(pick);
+                    var direction2 = dirList.get((pick+1)%possibleDirections.size());
+                    
+                    // T-Cross
+                    highLevelRoute.add(createGridPosition(lastTCrossing.x, lastTCrossing.y));
+                    
+                    // Dir1
+                    var dir1XY = xyFromDirection(currentX, currentY, direction1);
+                    highLevelRoute.add(createGridPosition(dir1XY[0], dir1XY[1]));
+                    
+                    // T-Cross
+                    highLevelRoute.add(createGridPosition(lastTCrossing.x, lastTCrossing.y));
+                    
+                    // Dir2
+                    var dir2XY = xyFromDirection(currentX, currentY, direction2);
+                    highLevelRoute.add(createGridPosition(dir2XY[0], dir2XY[1]));
+                    
+                    // T-Cross
+                    highLevelRoute.add(createGridPosition(lastTCrossing.x, lastTCrossing.y));
+
+                    // Original
+                    highLevelRoute.add(createGridPosition(currentX, currentY));
+                    
+                    backTracking = false;
+                    planAhead = false;
+                }else if (planAhead == false){
+                    // Wait until we are at the crossing
+                    if(currentX == lastTCrossing.x && currentY == lastTCrossing.y){
+                        planAhead = true;
+                    }
+                }
+                else{
+                    // Wait until we are back where we came from
+                    if(currentX == goalX && currentY == goalY){
+                        mode = Mode.Explore;
+                    }
+                }
+                case Race:
+                case Idle:
+                default:
                 break;
         }
     }
@@ -223,22 +324,22 @@ public class MazePlanner implements ControllerFunction  {
             //If only the entrance you just came from is marked, pick an arbitrary unmarked entrance, if any.  //
             /////////////////////////////////////////////////////////////////////////////////////////////////////
             // Check the possible directions
-            List<Cell.WallFlag> posibleDirections = new ArrayList<Cell.WallFlag>();
+            List<Cell.WallFlag> possibleDirections = new ArrayList<Cell.WallFlag>();
             if(!currentCell.walls.contains(Cell.WallFlag.Up) && cellMap[currentX][currentY + 1].visitCount == 0){
-                posibleDirections.add(Cell.WallFlag.Up);
+                possibleDirections.add(Cell.WallFlag.Up);
             }
             if(!currentCell.walls.contains(Cell.WallFlag.Down) && cellMap[currentX][currentY - 1].visitCount == 0){
-                posibleDirections.add(Cell.WallFlag.Down);
+                possibleDirections.add(Cell.WallFlag.Down);
             }
             if(!currentCell.walls.contains(Cell.WallFlag.Left) && cellMap[currentX - 1][currentY].visitCount == 0){
-                posibleDirections.add(Cell.WallFlag.Left);
+                possibleDirections.add(Cell.WallFlag.Left);
             }
             if(!currentCell.walls.contains(Cell.WallFlag.Right) && cellMap[currentX + 1][currentY].visitCount == 0){
-                posibleDirections.add(Cell.WallFlag.Right);
+                possibleDirections.add(Cell.WallFlag.Right);
             }
 
             // Pick any entrance with the fewest marks (zero if possible, else one).
-            if(posibleDirections.size() == 0){
+            if(possibleDirections.size() == 0){
                 // Find the dirrection of the surrounding cell (up, down, left, right) with the least visits
                 int minVisits = 10;
                 Cell.WallFlag minDirection = Cell.WallFlag.Up;
@@ -266,24 +367,27 @@ public class MazePlanner implements ControllerFunction  {
                 newDirection = minDirection;
             }
             // Perfer to go straight
-            else if (previousX < currentX && posibleDirections.contains(Cell.WallFlag.Right)){
+            else if (previousX < currentX && possibleDirections.contains(Cell.WallFlag.Right)){
                 newDirection = Cell.WallFlag.Right;
-            } else if (previousX > currentX && posibleDirections.contains(Cell.WallFlag.Left)){
+            } else if (previousX > currentX && possibleDirections.contains(Cell.WallFlag.Left)){
                 newDirection = Cell.WallFlag.Left;
-            } else if (previousY < currentY && posibleDirections.contains(Cell.WallFlag.Up)){
+            } else if (previousY < currentY && possibleDirections.contains(Cell.WallFlag.Up)){
                 newDirection = Cell.WallFlag.Up;
-            } else if (previousY > currentY && posibleDirections.contains(Cell.WallFlag.Down)){
+            } else if (previousY > currentY && possibleDirections.contains(Cell.WallFlag.Down)){
                 newDirection = Cell.WallFlag.Down;
             } else {
                 // Pick a random direction
                 Random rand = new Random();
-                newDirection = posibleDirections.get(rand.nextInt(posibleDirections.size()));
+                newDirection = possibleDirections.get(rand.nextInt(possibleDirections.size()));
             }
         }
          else if (currentCell.walls.size() == 3){
             System.out.println("Turn around");
              // Dead end, turn around
              newDirection =  EnumSet.complementOf(currentCell.walls).iterator().next();
+             
+             // Switch to U-turn mode
+             backTracking = true;
          }
         else{
             System.out.println("Straight");
@@ -304,31 +408,32 @@ public class MazePlanner implements ControllerFunction  {
         }
 
         // Calculate the new position
-        int newX = currentX;
-        int newY = currentY;
         lastDirection = newDirection;
-        switch(newDirection){
-            case Up:
-                newY++;
-                break;
-            case Down:
-                newY--;
-                break;
-            case Left:
-                newX--;
-                break;
-            case Right:
-                newX++;
-                break;
-        }
+        var newXY = xyFromDirection(currentX, currentY, newDirection);
 
         // Add  the new route
-        goalX = newX;
-        goalY = newY;
+        goalX = newXY[0];
+        goalY = newXY[1];
 
-        highLevelRoute.add(createGridPosition(newX, newY));
+        highLevelRoute.add(createGridPosition(goalX, goalY));
     }
     private GridPosition createGridPosition(int x, int y){
         return new GridPosition((byte)(x-X_OFFSET), (byte)(y-Y_OFFSET));
+    }
+
+    private int[] xyFromDirection(int x, int y, WallFlag flag){
+        switch(flag){
+            case Up:
+                return new int[]{x, y + 1};
+            case Down:
+                return new int[]{x, y - 1};
+            case Left:
+                return new int[]{x - 1, y};
+            case Right:
+                return new int[]{x + 1, y};
+            default:
+                System.out.println("Invalid direction");
+                return new int[]{x, y};
+        }
     }
 }
