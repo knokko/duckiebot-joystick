@@ -122,6 +122,8 @@ public class JoystickBoard extends JPanel implements KeyListener, MouseListener,
         lastLeftEncoder = leftWheelEncoder;
         lastRightEncoder = rightWheelEncoder;
 
+        Toolkit.getDefaultToolkit().sync();
+
         new Thread(() -> {
             try {
                 Thread.sleep(20);
@@ -178,10 +180,7 @@ public class JoystickBoard extends JPanel implements KeyListener, MouseListener,
     }
 
     @Override
-    public void mouseMoved(MouseEvent mouseEvent) {
-        joystickX = 0;
-        joystickY = 0;
-    }
+    public void mouseMoved(MouseEvent mouseEvent) {}
 
     @Override
     public void mouseClicked(MouseEvent mouseEvent) {}
