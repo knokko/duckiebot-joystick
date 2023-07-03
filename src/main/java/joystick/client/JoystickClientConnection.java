@@ -33,6 +33,7 @@ public class JoystickClientConnection {
     public void start() {
         var thread = new Thread(() -> {
             try (Socket socket = new Socket()) {
+                socket.setTcpNoDelay(true);
                 socket.connect(new InetSocketAddress(server, 21002));
                 var input = new DataInputStream(socket.getInputStream());
                 var output = new DataOutputStream(socket.getOutputStream());
