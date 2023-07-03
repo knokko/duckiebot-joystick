@@ -11,7 +11,6 @@ import controller.updater.ControllerFunction;
 import planner.MazePlanner.Cell.WallFlag;
 
 import static controller.util.DuckieBot.GRID_SIZE;
-import static planner.GridWall.Axis.*;
 
 public class MazePlanner implements ControllerFunction  {
     private final BlockingQueue<GridPosition> highLevelRoute;
@@ -199,6 +198,7 @@ public class MazePlanner implements ControllerFunction  {
                 // If we are at a T-crossing, turn around
                 if(lastTCrossing != null && cellMap[goalX][goalY].x == lastTCrossing.x && cellMap[goalX][goalY].y == lastTCrossing.y){
                     System.out.println("Time for a U-turn");
+                    planAhead = false;
                     mode = Mode.UTurn;
                 }
                 break;
@@ -267,6 +267,7 @@ public class MazePlanner implements ControllerFunction  {
                     else{
                         // Wait until we are back where we came from
                         if(realX == goalX && realY == goalY){
+                            lastTCrossing = null;
                             mode = Mode.Explore;
                         }
                     }
