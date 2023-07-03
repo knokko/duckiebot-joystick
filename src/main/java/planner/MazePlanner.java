@@ -76,6 +76,7 @@ public class MazePlanner implements ControllerFunction  {
         public EnumSet<WallFlag> walls;
 
         public int visitCount = 0;
+        public int plannedCount = 0;
 
         public Cell(int x, int y, int wallValue){
             this.x = x;
@@ -135,6 +136,8 @@ public class MazePlanner implements ControllerFunction  {
             currentX = goalX;
             currentY = goalY;
 
+            cellMap[realX][realY].plannedCount++;
+
             // Planning ahead
             System.out.println("Planning ahead");
             if(realX == goalX && realX == goalY){
@@ -170,19 +173,11 @@ public class MazePlanner implements ControllerFunction  {
                 var inRatioX = Math.abs((Math.abs(estimations.x + GRID_SIZE*0.5) % GRID_SIZE)/GRID_SIZE - 0.5) * 2;
                 var inRatioY = Math.abs((Math.abs(estimations.y + GRID_SIZE*0.5) % GRID_SIZE)/GRID_SIZE - 0.5) * 2;
                 // Also mark when planning ahead
-                if(newCell && ((inRatioX > visitedCellRatio) && (inRatioY > visitedCellRatio) || planAhead)){
+                if(newCell && (inRatioX > visitedCellRatio) && (inRatioY > visitedCellRatio)){
                     System.out.println("New cell at " + realX + ", " + realY);
                     cellMap[realX][realY].visitCount++;
+                    cellMap[realX][realY].plannedCount = 0;
                     newCell = false;
-                }
-
-                // Mark T-crossings we have passed forward
-                if(cellMap[realX][realY].walls.size() == 1 && estimations.leftSpeed > 0 && estimations.rightSpeed > 0){
-                    // Only update if we are finding a new one
-                    if(lastTCrossing == null || lastTCrossing.x != realX || lastTCrossing.y != realY){
-                        System.out.println("T-crossing at " + realX + ", " + realY);
-                    }
-                    lastTCrossing = cellMap[realX][realY];
                 }
 
                 // Only explore if we reached our goal
@@ -195,9 +190,10 @@ public class MazePlanner implements ControllerFunction  {
                     planAhead = cellMap[goalX][goalY].walls.contains(lastDirection);
                 }
 
-                // If we are at a T-crossing, turn around
-                if(lastTCrossing != null && cellMap[goalX][goalY].x == lastTCrossing.x && cellMap[goalX][goalY].y == lastTCrossing.y){
+                // If we are at a T-crossing, turn around (preferably last registerd crossing)
+                if(backTracking && cellMap[goalX][goalY].walls.size() == 1 ){
                     System.out.println("Time for a U-turn");
+                    lastTCrossing = cellMap[goalX][goalY];
                     planAhead = false;
                     mode = Mode.UTurn;
                 }
@@ -267,7 +263,12 @@ public class MazePlanner implements ControllerFunction  {
                     else{
                         // Wait until we are back where we came from
                         if(realX == goalX && realY == goalY){
+                            goalX = lastTCrossing.x;
+                            goalY = lastTCrossing.y;
+                            currentY = realY;
+                            currentX = realX;
                             lastTCrossing = null;
+                            planAhead = true;
                             mode = Mode.Explore;
                         }
                     }
@@ -327,49 +328,31 @@ public class MazePlanner implements ControllerFunction  {
             /////////////////////////////////////////////////////////////////////////////////////////////////////
             // Check the possible directions
             List<Cell.WallFlag> possibleDirections = new ArrayList<Cell.WallFlag>();
-            if(!currentCell.walls.contains(Cell.WallFlag.Up) && cellMap[currentX][currentY + 1].visitCount == 0){
-                possibleDirections.add(Cell.WallFlag.Up);
-            }
-            if(!currentCell.walls.contains(Cell.WallFlag.Down) && cellMap[currentX][currentY - 1].visitCount == 0){
-                possibleDirections.add(Cell.WallFlag.Down);
-            }
-            if(!currentCell.walls.contains(Cell.WallFlag.Left) && cellMap[currentX - 1][currentY].visitCount == 0){
-                possibleDirections.add(Cell.WallFlag.Left);
-            }
-            if(!currentCell.walls.contains(Cell.WallFlag.Right) && cellMap[currentX + 1][currentY].visitCount == 0){
-                possibleDirections.add(Cell.WallFlag.Right);
-            }
-
-            // Pick any entrance with the fewest marks (zero if possible, else one).
-            if(possibleDirections.size() == 0){
-                // Find the dirrection of the surrounding cell (up, down, left, right) with the least visits
-                int minVisits = 10;
-                Cell.WallFlag minDirection = Cell.WallFlag.Up;
-                if(cellMap[currentX][currentY + 1].visitCount < minVisits && !currentCell.walls.contains(Cell.WallFlag.Up)){
-                    minVisits = cellMap[currentX][currentY + 1].visitCount;
-                    minDirection = Cell.WallFlag.Up;
+            for(int i = 0; i < 5; i++){
+                if(!currentCell.walls.contains(Cell.WallFlag.Up) && cellMap[currentX][currentY + 1].visitCount + (planAhead?cellMap[currentX][currentY + 1].plannedCount : 0) == i){
+                    possibleDirections.add(Cell.WallFlag.Up);
                 }
-                if(cellMap[currentX][currentY - 1].visitCount < minVisits && !currentCell.walls.contains(Cell.WallFlag.Down)){
-                    minVisits = cellMap[currentX][currentY - 1].visitCount;
-                    minDirection = Cell.WallFlag.Down;
+                if(!currentCell.walls.contains(Cell.WallFlag.Down) && cellMap[currentX][currentY - 1].visitCount + (planAhead?cellMap[currentX][currentY - 1].plannedCount : 0) == i){
+                    possibleDirections.add(Cell.WallFlag.Down);
                 }
-                if(cellMap[currentX - 1][currentY].visitCount < minVisits && !currentCell.walls.contains(Cell.WallFlag.Left)){
-                    minVisits = cellMap[currentX - 1][currentY].visitCount;
-                    minDirection = Cell.WallFlag.Left;
+                if(!currentCell.walls.contains(Cell.WallFlag.Left) && cellMap[currentX - 1][currentY].visitCount + (planAhead?cellMap[currentX - 1][currentY].plannedCount : 0) == i){
+                    possibleDirections.add(Cell.WallFlag.Left);
                 }
-                if(cellMap[currentX + 1][currentY].visitCount < minVisits && !currentCell.walls.contains(Cell.WallFlag.Right)){
-                    minVisits = cellMap[currentX + 1][currentY].visitCount;
-                    minDirection = Cell.WallFlag.Right;
+                if(!currentCell.walls.contains(Cell.WallFlag.Right) && cellMap[currentX + 1][currentY].visitCount + (planAhead?cellMap[currentX + 1][currentY].plannedCount : 0) == i){
+                    possibleDirections.add(Cell.WallFlag.Right);
                 }
 
-                if(minVisits > 1){
-                    System.out.println("We visited too much!");
+                if(possibleDirections.size() > 0){
+                    break;
                 }
-                // Go in that direction
-                newDirection = minDirection;
+                
+                if(i == 4){
+                    System.out.println("No unmarked entrances at: " + currentX + ", " + currentY);
+                }
             }
+
             // Perfer to go straight
-            else if (previousX < currentX && possibleDirections.contains(Cell.WallFlag.Right)){
+            if (previousX < currentX && possibleDirections.contains(Cell.WallFlag.Right)){
                 newDirection = Cell.WallFlag.Right;
             } else if (previousX > currentX && possibleDirections.contains(Cell.WallFlag.Left)){
                 newDirection = Cell.WallFlag.Left;
@@ -387,6 +370,9 @@ public class MazePlanner implements ControllerFunction  {
             System.out.println("Turn around");
              // Dead end, turn around
              newDirection =  EnumSet.complementOf(currentCell.walls).iterator().next();
+
+             // Mark it extra
+             cellMap[currentX][currentY].visitCount++;
              
              // Switch to U-turn mode
              backTracking = true;
