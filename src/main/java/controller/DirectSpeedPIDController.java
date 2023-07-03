@@ -46,7 +46,7 @@ public class DirectSpeedPIDController implements ControllerFunction {
         // Setpoint ramping
         double speed = (estimations.leftSpeed + estimations.rightSpeed)/2;
 
-        if(abs(desiredVelocity.speed) < 0.01 && abs(speed) < 0.2){
+        if(abs(desiredVelocity.speed) < 0.01 && abs(speed) < 0.05){
             desiredWheelSpeed.rightSpeed = 0;
             desiredWheelSpeed.leftSpeed = 0;
             errorList.clear();
