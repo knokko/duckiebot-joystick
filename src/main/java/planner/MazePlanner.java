@@ -178,7 +178,7 @@ public class MazePlanner implements ControllerFunction  {
                 if(newCell && (inRatioX > visitedCellRatio) && (inRatioY > visitedCellRatio)){
                     System.out.println("New cell at " + realX + ", " + realY);
                     cellMap[realX][realY].visitCount++;
-                    cellMap[realX][realY].plannedCount = 0;
+                    cellMap[realX][realY].plannedCount--;
                     newCell = false;
                 }
 
@@ -194,7 +194,7 @@ public class MazePlanner implements ControllerFunction  {
 
                 // If we are at a T-crossing, turn around (preferably last registerd crossing)
                 if(backTracking && cellMap[goalX][goalY].walls.size() == 1 ){
-                    System.out.println("Time for a U-turn");
+                    System.out.println("Time for a U-turn, starting at " + realX + ", " + realY + "");
                     lastTCrossing = cellMap[goalX][goalY];
                     planAhead = false;
                     mode = Mode.UTurn;
