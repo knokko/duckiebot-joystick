@@ -22,18 +22,35 @@ public class MazePlanner implements ControllerFunction  {
     private final int Y_OFFSET = 50;
     private Cell[][] cellMap = new Cell[MAX_X][MAX_Y];
     private Cell currentCell;
+
+    // The real grid position
     private int realX = 0;
     private int realY = 0;
+
+    // The previous real grid position
     private int prevRealX = 0;
     private int prevRealY = 0;
-    private int previousX = 0;
+
+    // The current grid position, used for planning. (Current as in, plan from this position)
+    private int currentX = 0;   
+    private int currentY = 0; 
+    
+    //  The previous grid position, used for planning. (Previous as in, we planned previously from this position)
+    private int previousX = 0;  
     private int previousY = 0;
-    private int currentX = 0;
-    private int currentY = 0;
+
+    // The last grid position we crossed a T-junction (used for U-turning)
+    private Cell lastTCrossing;
+
+    // The goal grid position
     private int goalX = 0;
     private int goalY = 0;
+
+
     private Mode mode = Mode.Start;
-    private boolean planAhead = false;
+    private boolean planAhead = false; // Plan ahead flag, used when approaching a wall straight ahead.
+
+
     private WallFlag lastDirection = WallFlag.Right;
 
     public class Cell{
@@ -266,8 +283,7 @@ public class MazePlanner implements ControllerFunction  {
          else if (currentCell.walls.size() == 3){
             System.out.println("Turn around");
              // Dead end, turn around
-             var lottaWalls = EnumSet.complementOf(currentCell.walls);
-             newDirection = lottaWalls.iterator().next();
+             newDirection =  EnumSet.complementOf(currentCell.walls).iterator().next();
          }
         else{
             System.out.println("Straight");
