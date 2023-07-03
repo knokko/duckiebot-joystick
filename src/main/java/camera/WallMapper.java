@@ -32,13 +32,15 @@ public class WallMapper implements ControllerFunction {
         if (relativeWalls != null && lastTimestamp != relativeWalls.timestamp()) {
             lastTimestamp = relativeWalls.timestamp();
 
+            if (relativeWalls.walls().size() < 2) return;
+
             double angleRad = estimations.angle * 2 * PI;
             var snapper = new WallSnapper(relativeWalls.walls(), new WallSnapper.FixedPose(
                     estimations.x + CAMERA_OFFSET * cos(angleRad),
                     estimations.y + CAMERA_OFFSET * sin(angleRad),
                     estimations.angle
             ));
-            var snapResult = snapper.snap(0.03, 33, 0.02 * GRID_SIZE, 33);
+            var snapResult = snapper.snap(0.02, 33, 0.02 * GRID_SIZE, 33);
 
             if (snapResult.error() <= maxMapError && snapResult.walls().size() > 2) {
                 for (var wall : snapResult.walls()) estimations.walls.add(wall);

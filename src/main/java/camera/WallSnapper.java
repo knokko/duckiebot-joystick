@@ -2,7 +2,9 @@ package camera;
 
 import planner.GridWall;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
@@ -16,11 +18,16 @@ public class WallSnapper {
         return new AbsoluteWall(absoluteX, absoluteY);
     }
 
-    private final Collection<RelativeWall> originalWalls;
+    private final List<RelativeWall> originalWalls;
     private final FixedPose estimatedPose;
 
     public WallSnapper(Collection<RelativeWall> originalWalls, FixedPose estimatedPose) {
-        this.originalWalls = originalWalls;
+        this.originalWalls = new ArrayList<>(originalWalls);
+        this.originalWalls.sort((a, b) -> {
+            if (a.distance() > b.distance()) return 1;
+            if (a.distance() < b.distance()) return -1;
+            return Double.compare(a.angle(), b.angle());
+        });
         this.estimatedPose = estimatedPose;
     }
 
