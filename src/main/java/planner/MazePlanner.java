@@ -22,6 +22,10 @@ public class MazePlanner implements ControllerFunction  {
     private final int Y_OFFSET = 50;
     private Cell[][] cellMap = new Cell[MAX_X][MAX_Y];
     private Cell currentCell;
+    private int realX = 0;
+    private int realY = 0;
+    private int prevRealX = 0;
+    private int prevRealY = 0;
     private int previousX = 0;
     private int previousY = 0;
     private int currentX = 0;
@@ -29,6 +33,8 @@ public class MazePlanner implements ControllerFunction  {
     private int goalX = 0;
     private int goalY = 0;
     private Mode mode = Mode.Start;
+    private boolean planAhead = false;
+    private WallFlag lastDirection = WallFlag.Right;
 
     public class Cell{
         enum WallFlag{
@@ -91,13 +97,34 @@ public class MazePlanner implements ControllerFunction  {
 
     @Override
     public void update(double deltaTime) {
-        previousX = currentX;
-        previousY = currentY;
-        currentX = (int)Math.floor(estimations.x / GRID_SIZE) + X_OFFSET;
-        currentY = (int)Math.floor(estimations.y / GRID_SIZE) + Y_OFFSET;
+        // Get the position
+        prevRealX = realX;
+        prevRealY = realY;
+        realX = (int)Math.floor(estimations.x / GRID_SIZE) + X_OFFSET;;
+        realY = (int)Math.floor(estimations.y / GRID_SIZE) + Y_OFFSET;
 
-        boolean newCell = (currentX != previousX) || (currentY != previousY);
-        updateCell();
+        if(planAhead){
+            previousX = realX;
+            previousY = realY;
+            currentX = goalX;
+            currentY = goalY;
+
+            // Planning ahead
+            System.out.println("Planning ahead");
+            if(previousX == goalX && previousY == goalY){
+                planAhead = false;
+            }
+        }
+        else{
+            previousX = currentX;
+            previousY = currentY;
+            currentX = realX;
+            currentY = realY;
+        }
+        currentCell = cellMap[currentX][currentY];
+            
+        boolean newCell = (prevRealX != realX) || (prevRealY != realY);
+        updateWalls();
 
         switch(mode) {
             case Start:
@@ -109,8 +136,19 @@ public class MazePlanner implements ControllerFunction  {
                 mode = Mode.Explore;
                 break;
             case Explore:
+                // If we are in a new cell, mark it
+                if(newCell){
+                    System.out.println("New cell at " + realX + ", " + realY);
+                    cellMap[realX][realY].visitCount++;
+                }
+
                 if(goalX == currentX && goalY == currentY && highLevelRoute.isEmpty()){
                     explore();
+                    // Check if we need to plan ahead
+                    planAhead = cellMap[goalX][goalY].walls.contains(lastDirection) && cellMap[goalX][goalY].walls.size() < 3;
+                } else if(planAhead){
+                    // Keep updating incase we find new walls
+                    planAhead = cellMap[goalX][goalY].walls.contains(lastDirection);
                 }
                 break;
             case Race:
@@ -120,57 +158,46 @@ public class MazePlanner implements ControllerFunction  {
         }
     }
 
-    void updateCell(){
-        // Local coordinates
-        var localX = currentX - X_OFFSET;
-        var localY = currentY - Y_OFFSET;
-
+    void updateWalls(){
         var walls = estimations.walls.copyWalls();
         for(var wall : walls)
         {
-            // Look at the walls of the current grid for bottom and ???
-            if(wall.gridX() == localX && wall.gridY() == localY)
-            {
-                switch(wall.axis()){
-                    case Y:
-                        if(!cellMap[currentX][currentY].walls.contains(Cell.WallFlag.Left)){
-                            System.out.println("Left Wall at " + localX + ", " + localY);
-                            cellMap[currentX][currentY].walls.add(Cell.WallFlag.Left);
-                        }
-                        break;
-                    case X:
-                        if(!cellMap[currentX][currentY].walls.contains(Cell.WallFlag.Down)){
-                            System.out.println("Bottom Wall at " + localX + ", " + localY);
-                            cellMap[currentX][currentY].walls.add(Cell.WallFlag.Down);
-                        }
-                        break;
-                }
-            }
-            // Look at the tile above to find the top wall
-            else if(wall.gridX() == localX && wall.gridY() == localY + 1 && wall.axis() == X)
-            {
-                if(!cellMap[currentX][currentY].walls.contains(Cell.WallFlag.Up)){
-                    System.out.println("Up Wall at " + localX + ", " + localY);
-                    cellMap[currentX][currentY].walls.add(Cell.WallFlag.Up);
-                }
-            }
-            // Look at the tile to the right to find the right wall
-            else if(wall.gridX() == localX + 1 && wall.gridY() == localY && wall.axis() == Y)
-            {
-                if(!cellMap[currentX][currentY].walls.contains(Cell.WallFlag.Right)){
-                    System.out.println("Right Wall at " + localX + ", " + localY);
-                    cellMap[currentX][currentY].walls.add(Cell.WallFlag.Right);
-                }
+            // Local coordinates
+            var localX = wall.gridX() + X_OFFSET;
+            var localY = wall.gridY() + Y_OFFSET;
+
+            // Position the walls in the grid
+            switch(wall.axis()){
+                case Y:
+                    // If we detect a left wall at the current cell
+                    if(!cellMap[localX][localY].walls.contains(Cell.WallFlag.Left)){
+                        System.out.println("Left Wall at " + wall.gridX() + ", " + wall.gridY());
+                        cellMap[localX][localY].walls.add(Cell.WallFlag.Left);
+                    }
+                    // The we have a right wall at the cell to the left
+                    if(!cellMap[localX - 1][localY].walls.contains(Cell.WallFlag.Right)){
+                        System.out.println("Right Wall at " + (wall.gridX() - 1) + ", " + wall.gridY());
+                        cellMap[localX - 1][localY].walls.add(Cell.WallFlag.Right);
+                    }
+                    break;
+                case X:
+                    // If we detect a bottom wall at the current cell
+                    if(!cellMap[localX][localY].walls.contains(Cell.WallFlag.Down)){
+                        System.out.println("Bottom Wall at " + wall.gridX() + ", " + wall.gridY());
+                        cellMap[localX][localY].walls.add(Cell.WallFlag.Down);
+                    }
+                    // The we have a top wall at the cell below
+                    if(!cellMap[localX][localY - 1].walls.contains(Cell.WallFlag.Up)){
+                        System.out.println("Up Wall at " +  wall.gridX()+ ", " +  (wall.gridY() - 1));
+                        cellMap[localX][localY - 1].walls.add(Cell.WallFlag.Up);
+                    }
+                    break;
             }
         }
-
-        currentCell = cellMap[currentX][currentY];
     }
 
     public void explore(){        
         Cell.WallFlag newDirection = WallFlag.Up;  // Up is just a placeholder
-        // Always mark your path
-        cellMap[currentX][currentY].visitCount++;
 
         // If the current cell is a junction
         if(currentCell.isJunction()){
@@ -238,7 +265,6 @@ public class MazePlanner implements ControllerFunction  {
         }
          else if (currentCell.walls.size() == 3){
             System.out.println("Turn around");
-             cellMap[previousX][previousY].visitCount++;
              // Dead end, turn around
              var lottaWalls = EnumSet.complementOf(currentCell.walls);
              newDirection = lottaWalls.iterator().next();
@@ -264,6 +290,7 @@ public class MazePlanner implements ControllerFunction  {
         // Calculate the new position
         int newX = currentX;
         int newY = currentY;
+        lastDirection = newDirection;
         switch(newDirection){
             case Up:
                 newY++;
