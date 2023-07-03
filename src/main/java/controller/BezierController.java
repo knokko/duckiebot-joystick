@@ -52,7 +52,7 @@ public class BezierController implements ControllerFunction {
             return;
         }
 
-        double speed = 0.2;
+        double speed = 0.18;
         if (destinationPose.backward) speed = -speed;
 
         var dx = destinationPose.x - estimations.x;

@@ -133,12 +133,12 @@ public class SimulatorUI {
         var updater = new ControllerUpdater();
 
         updater.addController(updateFunction, 1);
-        updater.addController(routeController, 5);
+        updater.addController(routeController, 1);
         updater.addController(directSpeedController, 1);
         updater.addController(differentialDriver, 1);
         updater.addController(leftSpeedEstimator, 1);
         updater.addController(rightSpeedEstimator, 1);
-        updater.addController(poseEstimator, 3);
+        updater.addController(poseEstimator, 1);
         //updater.addController(averageSpeedEstimator, 1);
 
         var wallUpdater = new ControllerUpdater();
