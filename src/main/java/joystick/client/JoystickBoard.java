@@ -47,13 +47,13 @@ public class JoystickBoard extends JPanel implements KeyListener, MouseListener,
 
     @Override
     public void paint(Graphics graphics) {
-        Integer leftWheelEncoder = duckieState.leftWheelEncoder;
-        Integer rightWheelEncoder = duckieState.rightWheelEncoder;
+        var leftWheelEncoder = duckieState.leftWheelEncoder;
+        var rightWheelEncoder = duckieState.rightWheelEncoder;
         int deltaLeft = 0;
         int deltaRight = 0;
         if (leftWheelEncoder != null && rightWheelEncoder != null && lastLeftEncoder != null && lastRightEncoder != null) {
-            deltaLeft = 50 * (leftWheelEncoder - lastLeftEncoder);
-            deltaRight = 50 * (rightWheelEncoder - lastRightEncoder);
+            deltaLeft = 50 * (leftWheelEncoder.value() - lastLeftEncoder);
+            deltaRight = 50 * (rightWheelEncoder.value() - lastRightEncoder);
         }
         int deltaLeftMotor = (int) (300f * leftMotor);
         int deltaRightMotor = (int) (300f * rightMotor);
@@ -119,8 +119,10 @@ public class JoystickBoard extends JPanel implements KeyListener, MouseListener,
                 2 * joystickRadius, 2 * joystickRadius
         );
 
-        lastLeftEncoder = leftWheelEncoder;
-        lastRightEncoder = rightWheelEncoder;
+        if (leftWheelEncoder != null && rightWheelEncoder != null) {
+            lastLeftEncoder = leftWheelEncoder.value();
+            lastRightEncoder = rightWheelEncoder.value();
+        }
 
         Toolkit.getDefaultToolkit().sync();
 

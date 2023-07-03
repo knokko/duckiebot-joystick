@@ -28,8 +28,8 @@ public class TestSimulator {
         assertEquals(0.5, simulator.realPose.x, 0.01);
         assertEquals(0.0, simulator.realPose.y, 0.01);
 
-        assertEquals(WHEEL_TICKS_PER_TURN * 0.5 / (2 * Math.PI * WHEEL_RADIUS), simulator.trackedState.leftWheelEncoder, 1.1);
-        assertEquals(simulator.trackedState.leftWheelEncoder, (double) simulator.trackedState.rightWheelEncoder, 1.1);
+        assertEquals(WHEEL_TICKS_PER_TURN * 0.5 / (2 * Math.PI * WHEEL_RADIUS), simulator.trackedState.leftWheelEncoder.value(), 1.1);
+        assertEquals(simulator.trackedState.leftWheelEncoder.value(), simulator.trackedState.rightWheelEncoder.value(), 1.1);
     }
 
     @Test
@@ -58,8 +58,8 @@ public class TestSimulator {
         assertEquals(0.0, simulator.realPose.velocityX, 0.01);
         assertEquals(0.5, simulator.realPose.velocityY, 0.01);
 
-        assertEquals(0.0, simulator.trackedState.leftWheelEncoder, 1.1);
-        assertEquals(WHEEL_TICKS_PER_TURN * 0.25 * DISTANCE_BETWEEN_WHEELS / WHEEL_RADIUS, simulator.trackedState.rightWheelEncoder, 1.1);
+        assertEquals(0.0, simulator.trackedState.leftWheelEncoder.value(), 1.1);
+        assertEquals(WHEEL_TICKS_PER_TURN * 0.25 * DISTANCE_BETWEEN_WHEELS / WHEEL_RADIUS, simulator.trackedState.rightWheelEncoder.value(), 1.1);
     }
 
     @Test

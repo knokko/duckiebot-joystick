@@ -20,16 +20,22 @@ public class JoystickConnectionManager {
         this.controlMotor = controlMotor;
     }
 
-    public void broadcastLeftWheelEncoder(int data) {
-        broadcast((byte) 1, output -> output.writeInt(data));
+    public void broadcastLeftWheelEncoder(long timestamp, int data) {
+        broadcast((byte) 1, output -> {
+            output.writeLong(timestamp);
+            output.writeInt(data);
+        });
     }
 
     public void broadcastLeftWheelMotor(double data) {
         broadcast((byte) 2, output -> output.writeFloat((float) data));
     }
 
-    public void broadcastRightWheelEncoder(int data) {
-        broadcast((byte) 3, output -> output.writeInt(data));
+    public void broadcastRightWheelEncoder(long timestamp, int data) {
+        broadcast((byte) 3, output -> {
+            output.writeLong(timestamp);
+            output.writeInt(data);
+        });
     }
 
     public void broadcastRightWheelMotor(double data) {

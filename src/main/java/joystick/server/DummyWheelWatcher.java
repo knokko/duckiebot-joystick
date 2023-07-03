@@ -1,17 +1,18 @@
 package joystick.server;
 
 import java.util.Random;
+import java.util.function.BiConsumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 
 public class DummyWheelWatcher {
 
-    private final IntConsumer leftEncoderConsumer, rightEncoderConsumer;
+    private final BiConsumer<Long, Integer> leftEncoderConsumer, rightEncoderConsumer;
     private final DoubleConsumer leftMotorConsumer, rightMotorConsumer;
 
     public DummyWheelWatcher(
-            IntConsumer leftEncoderConsumer, DoubleConsumer leftMotorConsumer,
-            IntConsumer rightEncoderConsumer, DoubleConsumer rightMotorConsumer
+            BiConsumer<Long, Integer> leftEncoderConsumer, DoubleConsumer leftMotorConsumer,
+            BiConsumer<Long, Integer> rightEncoderConsumer, DoubleConsumer rightMotorConsumer
     ) {
         this.leftEncoderConsumer = leftEncoderConsumer;
         this.rightEncoderConsumer = rightEncoderConsumer;
@@ -23,8 +24,8 @@ public class DummyWheelWatcher {
         Thread thread = new Thread(() -> {
             Random rng = new Random();
             while (true) {
-                leftEncoderConsumer.accept(rng.nextBoolean() ? 2 : 3);
-                rightEncoderConsumer.accept(rng.nextBoolean() ? 2 : 3);
+                leftEncoderConsumer.accept(System.nanoTime(), rng.nextBoolean() ? 2 : 3);
+                rightEncoderConsumer.accept(System.nanoTime(), rng.nextBoolean() ? 2 : 3);
                 leftMotorConsumer.accept(0.9);
                 rightMotorConsumer.accept(1.0);
                 try {

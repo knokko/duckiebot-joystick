@@ -45,9 +45,9 @@ public class JoystickClientConnection {
                     boolean didSomething = false;
                     while (input.available() > 0) {
                         byte type = input.readByte();
-                        if (type == 1) duckieState.leftWheelEncoder = input.readInt();
+                        if (type == 1) duckieState.leftWheelEncoder = new DuckieState.WheelEncoderEntry(input.readLong(), input.readInt());
                         else if (type == 2) leftMotorConsumer.accept(input.readFloat());
-                        else if (type == 3) duckieState.rightWheelEncoder = input.readInt();
+                        else if (type == 3) duckieState.rightWheelEncoder = new DuckieState.WheelEncoderEntry(input.readLong(), input.readInt());
                         else if (type == 4) rightMotorConsumer.accept(input.readFloat());
                         else duckieState.tof = input.readFloat();
                         didSomething = true;
@@ -67,7 +67,8 @@ public class JoystickClientConnection {
 
                     if (!didSomething) {
                         try {
-                            Thread.sleep(5);
+                            //noinspection BusyWait
+                            Thread.sleep(1);
                         } catch (InterruptedException shouldNotHappen) {
                             throw new Error(shouldNotHappen);
                         }

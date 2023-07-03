@@ -1,7 +1,6 @@
 package simulator.ui;
 
 import controller.desired.DesiredVelocity;
-import controller.desired.DesiredWheelSpeed;
 import controller.estimation.DuckieEstimations;
 import controller.parameters.PIDParameters;
 import state.DuckieControls;
@@ -18,7 +17,7 @@ public class MonitorBoard extends JPanel {
     private final Collection<GraphSequence> graphSequences = new ArrayList<>();
     private final DuckieEstimations estimations;
 
-    private Integer initialLeftTicks, initialRightTicks;
+    private DuckieState.WheelEncoderEntry initialLeftTicks, initialRightTicks;
 
     private final long startTime = System.currentTimeMillis();
 
@@ -34,18 +33,18 @@ public class MonitorBoard extends JPanel {
         graphSequences.add(new GraphSequence("Left control output", new Color(200, 0, 0), () -> trackedState.leftWheelControl));
         graphSequences.add(new GraphSequence("Right control output", new Color(250, 0, 20), () -> trackedState.rightWheelControl));
         graphSequences.add(new GraphSequence("Left wheel ticks", new Color(0, 200, 10), () -> {
-            Integer leftTicks = trackedState.leftWheelEncoder;
+            var leftTicks = trackedState.leftWheelEncoder;
             if (leftTicks != null) {
                 if (initialLeftTicks == null) initialLeftTicks = leftTicks;
-                else return (leftTicks - initialLeftTicks) * 0.002;
+                else return (leftTicks.value() - initialLeftTicks.value()) * 0.002;
             }
             return 0.0;
         }));
         graphSequences.add(new GraphSequence("Right wheel ticks", new Color(0, 250, 30), () -> {
-            Integer rightTicks = trackedState.rightWheelEncoder;
+            var rightTicks = trackedState.rightWheelEncoder;
             if (rightTicks != null) {
                 if (initialRightTicks == null) initialRightTicks = rightTicks;
-                else return (rightTicks - initialRightTicks) * 0.002;
+                else return (rightTicks.value() - initialRightTicks.value()) * 0.002;
             }
             return 0.0;
         }));

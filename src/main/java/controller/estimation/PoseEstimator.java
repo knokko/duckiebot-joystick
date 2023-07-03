@@ -12,7 +12,7 @@ public class PoseEstimator implements ControllerFunction {
     private final DuckieState trackedState;
     private final DuckieEstimations estimations;
 
-    private Integer lastLeftWheelTick, lastRightWheelTick;
+    private DuckieState.WheelEncoderEntry lastLeftWheelTick, lastRightWheelTick;
 
     public PoseEstimator(DuckieState trackedState, DuckieEstimations estimations) {
         this.trackedState = trackedState;
@@ -25,12 +25,12 @@ public class PoseEstimator implements ControllerFunction {
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
     @Override
     public void update(double deltaTime) {
-        Integer currentLeftTicks = trackedState.leftWheelEncoder;
-        Integer currentRightTicks = trackedState.rightWheelEncoder;
+        var currentLeftTicks = trackedState.leftWheelEncoder;
+        var currentRightTicks = trackedState.rightWheelEncoder;
 
         if (currentLeftTicks != null && currentRightTicks != null && lastLeftWheelTick != null && lastRightWheelTick != null) {
-            double leftDistance = (currentLeftTicks - lastLeftWheelTick) * WHEEL_RADIUS * 2 * Math.PI / WHEEL_TICKS_PER_TURN;
-            double rightDistance = (currentRightTicks - lastRightWheelTick) * WHEEL_RADIUS * 2 * Math.PI / WHEEL_TICKS_PER_TURN;
+            double leftDistance = (currentLeftTicks.value() - lastLeftWheelTick.value()) * WHEEL_RADIUS * 2 * Math.PI / WHEEL_TICKS_PER_TURN;
+            double rightDistance = (currentRightTicks.value() - lastRightWheelTick.value()) * WHEEL_RADIUS * 2 * Math.PI / WHEEL_TICKS_PER_TURN;
 
             double averageDistance = (leftDistance + rightDistance) * 0.5;
             double angleRadians = estimations.angle * 2 * Math.PI;

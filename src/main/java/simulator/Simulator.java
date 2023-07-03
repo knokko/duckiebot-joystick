@@ -49,8 +49,8 @@ public class Simulator implements ControllerFunction {
         this.estimations = new DuckieEstimations();
         this.controls = new DuckieControls();
         this.trackedState = new DuckieState();
-        this.trackedState.leftWheelEncoder = 0;
-        this.trackedState.rightWheelEncoder = 0;
+        this.trackedState.leftWheelEncoder = new DuckieState.WheelEncoderEntry(System.nanoTime(), 0);
+        this.trackedState.rightWheelEncoder = new DuckieState.WheelEncoderEntry(System.nanoTime(), 0);
 
         this.leftControl = new SimulatorLatency<>(leftControlLatency, 0.0);
         this.rightControl = new SimulatorLatency<>(rightControlLatency, 0.0);
@@ -63,6 +63,12 @@ public class Simulator implements ControllerFunction {
         this.maxCameraNoise = maxCameraNoise;
     }
 
+    private double clampThrottle(double input) {
+        if (input > 1) return 1;
+        if (input < -1) return -1;
+        return input;
+    }
+
     /**
      * This should be called 1000 times per second
      */
@@ -70,8 +76,8 @@ public class Simulator implements ControllerFunction {
     public synchronized void update(double deltaTime) {
         currentTime += deltaTime;
 
-        leftControl.insert(currentTime, controls.velLeft);
-        rightControl.insert(currentTime, controls.velRight);
+        leftControl.insert(currentTime, clampThrottle(controls.velLeft));
+        rightControl.insert(currentTime, clampThrottle(controls.velRight));
 
         realPose.x += deltaTime * realPose.velocityX;
         realPose.y += deltaTime * realPose.velocityY;
@@ -95,8 +101,8 @@ public class Simulator implements ControllerFunction {
         }
         leftTicks.insert(currentTime, (int) exactLeftWheelTicks);
         rightTicks.insert(currentTime, (int) exactRightWheelTicks);
-        trackedState.leftWheelEncoder = leftTicks.get(currentTime);
-        trackedState.rightWheelEncoder = rightTicks.get(currentTime);
+        trackedState.leftWheelEncoder = new DuckieState.WheelEncoderEntry(System.nanoTime(), leftTicks.get(currentTime));
+        trackedState.rightWheelEncoder = new DuckieState.WheelEncoderEntry(System.nanoTime(), rightTicks.get(currentTime));
         trackedState.leftWheelControl = leftControl.get(currentTime);
         trackedState.rightWheelControl = rightControl.get(currentTime);
 

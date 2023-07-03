@@ -7,7 +7,6 @@ import controller.desired.DesiredWheelSpeed;
 import controller.estimation.DuckieEstimations;
 import controller.estimation.PoseEstimator;
 import controller.estimation.SpeedEstimator;
-import controller.estimation.SpeedPredictor;
 import controller.parameters.DuckieParameters;
 import controller.updater.ControllerFunction;
 import controller.updater.ControllerUpdater;
@@ -124,12 +123,12 @@ public class SimulatorUI {
                 () -> trackedState.rightWheelEncoder, newSpeed -> estimations.rightSpeed = newSpeed
         );
 
-        var averageSpeedEstimator = new SpeedPredictor(() -> {
-            Integer leftTicks = trackedState.leftWheelEncoder;
-            Integer rightTicks = trackedState.rightWheelEncoder;
-            if (leftTicks != null && rightTicks != null) return (leftTicks + rightTicks) * 0.5;
-            else return Double.NaN;
-        }, newPoly -> estimations.distancePolynomial = newPoly);
+//        var averageSpeedEstimator = new SpeedPredictor(() -> {
+//            var leftTicks = trackedState.leftWheelEncoder;
+//            var rightTicks = trackedState.rightWheelEncoder;
+//            if (leftTicks != null && rightTicks != null) return (leftTicks.value() + rightTicks.value()) * 0.5;
+//            else return Double.NaN;
+//        }, newPoly -> estimations.distancePolynomial = newPoly);
 
         var updater = new ControllerUpdater();
 
@@ -137,10 +136,10 @@ public class SimulatorUI {
         updater.addController(routeController, 5);
         updater.addController(directSpeedController, 1);
         updater.addController(differentialDriver, 1);
-        updater.addController(leftSpeedEstimator, 5);
-        updater.addController(rightSpeedEstimator, 5);
+        updater.addController(leftSpeedEstimator, 1);
+        updater.addController(rightSpeedEstimator, 1);
         updater.addController(poseEstimator, 3);
-        updater.addController(averageSpeedEstimator, 1);
+        //updater.addController(averageSpeedEstimator, 1);
 
         var wallUpdater = new ControllerUpdater();
         //wallUpdater.addController(new WallMapper(estimations, trackedState, 0.02, 0.1), 1);
