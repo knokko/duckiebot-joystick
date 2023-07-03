@@ -30,7 +30,7 @@ public class MazePlanner implements ControllerFunction  {
     private int goalY = 0;
     private Mode mode = Mode.Start;
 
-    class Cell{
+    public class Cell{
         enum WallFlag{
             Up,
             Down,
@@ -53,6 +53,15 @@ public class MazePlanner implements ControllerFunction  {
             this.walls = EnumSet.noneOf(WallFlag.class);
         }
 
+        // Grid x
+        public int gridX(){
+            return x-X_OFFSET;
+        }
+
+        public int gridY(){
+            return y-Y_OFFSET;
+        }
+
         public boolean isJunction(){
         // A junction is a cell with at most one wall
             return walls.size() < 2;
@@ -70,6 +79,7 @@ public class MazePlanner implements ControllerFunction  {
         this.highLevelRoute = highLevelRoute;
         this.estimations = estimations;
         this.currentCell = new Cell(X_OFFSET, Y_OFFSET, 0);
+        estimations.cells = this.cellMap;
 
         // initialize the cell map
         for(int x = 0; x < MAX_X; x++){
@@ -159,11 +169,12 @@ public class MazePlanner implements ControllerFunction  {
 
     public void explore(){        
         Cell.WallFlag newDirection = WallFlag.Up;  // Up is just a placeholder
-        Boolean markCell = false;
+        // Always mark your path
+        cellMap[currentX][currentY].visitCount++;
+
+        // If the current cell is a junction
         if(currentCell.isJunction()){
             System.out.println("Junction");
-            // If the current cell is a junction, mark where we came from
-            cellMap[previousX][previousY].visitCount++;
             /////////////////////////////////////////////////////////////////////////////////////////////////////
             //If only the entrance you just came from is marked, pick an arbitrary unmarked entrance, if any.  //
             /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -203,6 +214,10 @@ public class MazePlanner implements ControllerFunction  {
                     minVisits = cellMap[currentX + 1][currentY].visitCount;
                     minDirection = Cell.WallFlag.Right;
                 }
+
+                if(minVisits > 1){
+                    System.out.println("We visited too much!");
+                }
                 // Go in that direction
                 newDirection = minDirection;
             }
@@ -220,9 +235,6 @@ public class MazePlanner implements ControllerFunction  {
                 Random rand = new Random();
                 newDirection = posibleDirections.get(rand.nextInt(posibleDirections.size()));
             }
-            
-            // Mark where we are going to
-            markCell = true;
         }
          else if (currentCell.walls.size() == 3){
             System.out.println("Turn around");
@@ -230,8 +242,6 @@ public class MazePlanner implements ControllerFunction  {
              // Dead end, turn around
              var lottaWalls = EnumSet.complementOf(currentCell.walls);
              newDirection = lottaWalls.iterator().next();
-             // and mark where we are going to
-             markCell = true;
          }
         else{
             System.out.println("Straight");
@@ -272,11 +282,6 @@ public class MazePlanner implements ControllerFunction  {
         // Add  the new route
         goalX = newX;
         goalY = newY;
-
-        // Mark if needed
-        if(markCell){
-            cellMap[newX][newY].visitCount++;
-        }
 
         highLevelRoute.add(createGridPosition(newX, newY));
     }
