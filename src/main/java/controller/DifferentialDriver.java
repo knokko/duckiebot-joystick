@@ -11,6 +11,7 @@ import controller.updater.ControllerFunction;
 import java.util.LinkedList;
 
 import static java.lang.Math.abs;
+import static java.lang.Math.signum;
 
 public class DifferentialDriver implements ControllerFunction {
 
@@ -22,7 +23,7 @@ public class DifferentialDriver implements ControllerFunction {
 
     // Ramping parameters
     private double setPoint = 0;
-    private int derivativeBackPropagator = 5;
+    private int derivativeBackPropagator = 25;
 
     private LinkedList<ErrorSample> errorList = new LinkedList<>();
     record ErrorSample(double timestamp, double error) {}
@@ -110,8 +111,8 @@ public class DifferentialDriver implements ControllerFunction {
         double finalLeftSpeed = desiredWheelSpeed.leftSpeed;
         double finalRightSpeed = desiredWheelSpeed.rightSpeed;
         if(finalLeftSpeed != 0 && finalRightSpeed != 0){
-            finalLeftSpeed -= angleCorrection;
-            finalRightSpeed += angleCorrection;
+            finalLeftSpeed *= (1 - signum(finalLeftSpeed) * angleCorrection);
+            finalRightSpeed *= (1 + signum(finalRightSpeed) * angleCorrection);
         } else errorList.clear();
 
         controls.velLeft = finalLeftSpeed;

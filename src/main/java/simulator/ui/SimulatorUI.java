@@ -57,7 +57,7 @@ public class SimulatorUI {
             connection.start();
         } else {
             var simulator = new Simulator(
-                    Terrain.NOISY_SLOW, 0.0, 0.0, 0.0, 0.0,
+                    Terrain.VERY_NOISY_SLOW, 0.0, 0.0, 0.0, 0.0,
                     100, 0.00, 0.00, 0.05
             );
             estimations = simulator.estimations;
@@ -138,7 +138,6 @@ public class SimulatorUI {
         updater.addController(differentialDriver, 1);
         updater.addController(leftSpeedEstimator, 1);
         updater.addController(rightSpeedEstimator, 1);
-        updater.addController(poseEstimator, 1);
         //updater.addController(averageSpeedEstimator, 1);
 
         var wallUpdater = new ControllerUpdater();
@@ -171,6 +170,14 @@ public class SimulatorUI {
         Thread wallThread = new Thread(wallUpdater::start);
         wallThread.setDaemon(true);
         wallThread.start();
+
+        Thread poseThread = new Thread(() -> {
+            while (true) {
+                poseEstimator.update(0.0);
+            }
+        });
+        poseThread.setDaemon(true);
+        poseThread.start();
 
         Thread repaintThread = new Thread(() -> {
             try {
