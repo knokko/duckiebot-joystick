@@ -76,7 +76,7 @@ public class BezierController implements ControllerFunction {
         this.curve = new BezierCurve(x1, y1, x2, y2, x3, y3, x4, y4);
 
         double destinationTime = distance / abs(speed);
-        double timeStep = 0.45;
+        double timeStep = 0.35;
         double t = timeStep / destinationTime;
         if (t >= 1) {
             t = 1;

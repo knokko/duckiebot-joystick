@@ -25,24 +25,30 @@ public class PoseEstimator implements ControllerFunction {
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
     @Override
     public void update(double deltaTime) {
+        if (this.lastLeftWheelTick == null || this.lastRightWheelTick == null) {
+            this.lastLeftWheelTick = trackedState.leftWheelEncoder;
+            this.lastRightWheelTick = trackedState.rightWheelEncoder;
+        }
         var currentLeftTicks = trackedState.leftWheelEncoder;
         var currentRightTicks = trackedState.rightWheelEncoder;
 
-        if (currentLeftTicks != null && currentRightTicks != null && lastLeftWheelTick != null && lastRightWheelTick != null) {
-            double leftDistance = (currentLeftTicks.value() - lastLeftWheelTick.value()) * WHEEL_RADIUS * 2 * Math.PI / WHEEL_TICKS_PER_TURN;
-            double rightDistance = (currentRightTicks.value() - lastRightWheelTick.value()) * WHEEL_RADIUS * 2 * Math.PI / WHEEL_TICKS_PER_TURN;
+        if (currentLeftTicks == null || currentRightTicks == null || lastLeftWheelTick == null || lastRightWheelTick == null) return;
+        if (currentLeftTicks == this.lastLeftWheelTick && currentRightTicks == this.lastRightWheelTick) return;
 
-            double averageDistance = (leftDistance + rightDistance) * 0.5;
-            double angleRadians = estimations.angle * 2 * Math.PI;
-            estimations.x += averageDistance * cos(angleRadians);
-            estimations.y += averageDistance * sin(angleRadians);
+        double leftDistance = (currentLeftTicks.value() - lastLeftWheelTick.value()) * WHEEL_RADIUS * 2 * Math.PI / WHEEL_TICKS_PER_TURN;
+        double rightDistance = (currentRightTicks.value() - lastRightWheelTick.value()) * WHEEL_RADIUS * 2 * Math.PI / WHEEL_TICKS_PER_TURN;
 
-            double deltaAngle = (rightDistance - leftDistance) / (2 * Math.PI * DISTANCE_BETWEEN_WHEELS);
-            double newAngle = estimations.angle + deltaAngle;
-            if (newAngle < 0) newAngle += 1;
-            if (newAngle > 1) newAngle -= 1;
-            estimations.angle = newAngle;
-        }
+        double averageDistance = (leftDistance + rightDistance) * 0.5;
+        double angleRadians = estimations.angle * 2 * Math.PI;
+        estimations.x += averageDistance * cos(angleRadians);
+        estimations.y += averageDistance * sin(angleRadians);
+
+        double deltaAngle = (rightDistance - leftDistance) / (2 * Math.PI * DISTANCE_BETWEEN_WHEELS);
+        double newAngle = estimations.angle + deltaAngle;
+        if (newAngle < 0) newAngle += 1;
+        if (newAngle > 1) newAngle -= 1;
+
+        estimations.angle = newAngle;
 
         lastLeftWheelTick = currentLeftTicks;
         lastRightWheelTick = currentRightTicks;
