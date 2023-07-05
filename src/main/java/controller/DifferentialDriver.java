@@ -1,6 +1,7 @@
 package controller;
 
 import controller.parameters.PIDParameters;
+import controller.util.MedianFilter;
 import state.DuckieControls;
 
 import controller.desired.DesiredVelocity;
@@ -27,6 +28,9 @@ public class DifferentialDriver implements ControllerFunction {
 
     private LinkedList<ErrorSample> errorList = new LinkedList<>();
     record ErrorSample(double timestamp, double error) {}
+
+    private final MedianFilter filterP = new MedianFilter(1); // TODO Hm... increasing maxSize causes instability...
+    private final MedianFilter filterD = new MedianFilter(1);
 
     public DifferentialDriver(
             DesiredVelocity desiredVelocity, DesiredWheelSpeed desiredWheelSpeed, DuckieEstimations estimations,
@@ -99,9 +103,11 @@ public class DifferentialDriver implements ControllerFunction {
             errorD = 0;
         }
 
-        double correctionP = pid.Kp * errorP;
+        filterP.insert(errorP);
+        filterD.insert(errorD);
+        double correctionP = pid.Kp * filterP.get();
         double correctionI = pid.Ki * errorI;
-        double correctionD = pid.Kd * errorD;
+        double correctionD = pid.Kd * filterD.get();
         pid.correctionP = correctionP;
         pid.correctionI = correctionI;
         pid.correctionD = correctionD;
