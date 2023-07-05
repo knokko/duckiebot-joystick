@@ -77,6 +77,7 @@ public class BezierController implements ControllerFunction {
 
         double destinationTime = distance / abs(speed);
         double timeStep = 0.35;
+        if (route.size() == 1) timeStep = 0.55;
         double t = timeStep / destinationTime;
         if (t >= 1) {
             t = 1;
