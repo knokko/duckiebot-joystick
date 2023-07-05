@@ -9,6 +9,7 @@ import java.util.Collections;
 
 import static controller.util.DuckieBot.GRID_SIZE;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
 
 public class TestWallSnapper {
 
@@ -50,8 +51,11 @@ public class TestWallSnapper {
         assertEquals(0.0, snapToLeft.computeError(0.0, -0.2 * GRID_SIZE, 0.0), 0.001);
 
         var leftResult = snapToLeft.snap(
-                0.1, 11, 0.4 * GRID_SIZE, 91
+                0.1, 11, 0.4 * GRID_SIZE, 91,
+                new RelativeWall(3.9, 0.02)
         );
+        assertEquals(3, leftResult.duckie().gridX());
+        assertEquals(0, leftResult.duckie().gridY());
         assertEquals(0.0, leftResult.correctedPose().angle(), 0.01);
         assertEquals(-0.2 * GRID_SIZE, leftResult.correctedPose().x(), 0.01);
         assertEquals(0.0, leftResult.correctedPose().y(), 0.01);
@@ -67,8 +71,9 @@ public class TestWallSnapper {
         ), new WallSnapper.FixedPose(0.2 * GRID_SIZE, 0.4 * GRID_SIZE, 0));
 
         var upResult = snapUp.snap(
-                0.1, 33, GRID_SIZE * 0.3, 66
+                0.1, 33, GRID_SIZE * 0.3, 66, null
         );
+        assertNull(upResult.duckie());
         assertEquals(0.0, upResult.correctedPose().angle(), 0.01);
         assertEquals(0.2 * GRID_SIZE, upResult.correctedPose().x(), 0.01);
         assertEquals(0.5 * GRID_SIZE, upResult.correctedPose().y(), 0.01);

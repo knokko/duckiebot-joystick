@@ -21,7 +21,7 @@ public class JoystickServer {
             var wheelWatcher = new JoystickWheelWatcher(
                     connectionManager::broadcastLeftWheelEncoder, connectionManager::broadcastLeftWheelMotor,
                     connectionManager::broadcastRightWheelEncoder, connectionManager::broadcastRightWheelMotor,
-                    connectionManager::broadcastTof
+                    connectionManager::broadcastWalls, connectionManager::broadcastDuckie, connectionManager::broadcastTof
             );
             wheelWatcher.start();
         }

@@ -1,5 +1,7 @@
 package joystick.server;
 
+import camera.RelativeWall;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -7,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -42,8 +45,25 @@ public class JoystickConnectionManager {
         broadcast((byte) 4, output -> output.writeFloat((float) data));
     }
 
+    public void broadcastWalls(Collection<RelativeWall> walls) {
+        broadcast((byte) 5, output -> {
+            output.writeInt(walls.size());
+            for (var wall : walls) {
+                output.writeFloat((float) wall.distance());
+                output.writeFloat((float) wall.angle());
+            }
+        });
+    }
+
+    public void broadcastDuckie(RelativeWall duckiePose) {
+        broadcast((byte) 6, output -> {
+            output.writeFloat((float) duckiePose.distance());
+            output.writeFloat((float) duckiePose.angle());
+        });
+    }
+
     public void broadcastTof(double data) {
-        broadcast((byte) 5, output -> output.writeFloat((float) data));
+        broadcast((byte) 7, output -> output.writeFloat((float) data));
     }
 
     private void broadcast(byte type, DataSource writeData) {

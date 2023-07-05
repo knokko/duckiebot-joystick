@@ -5,6 +5,7 @@ import camera.RelativeWall;
 import camera.WallSnapper;
 import controller.estimation.DuckieEstimations;
 import controller.updater.ControllerFunction;
+import planner.GridWall;
 import state.DuckieControls;
 import state.DuckiePose;
 import state.DuckieState;
@@ -22,7 +23,7 @@ public class Simulator implements ControllerFunction {
     private double exactLeftWheelTicks, exactRightWheelTicks;
     public final DuckieControls controls;
     public final DuckieState trackedState;
-    public final WallGrid walls = SimulatorMaze.createTestingWallGrid();
+    public final WallGrid walls = SimulatorMaze.createTestingWallGrid5x5();
 
     private final SimulatorLatency<Double> leftControl, rightControl;
     private final SimulatorLatency<Integer> leftTicks, rightTicks;
@@ -120,6 +121,35 @@ public class Simulator implements ControllerFunction {
                     wall -> RelativeWall.noisyFromGrid(wall, cameraPose, maxCameraNoise)
             ).collect(Collectors.toSet());
             trackedState.cameraWalls = new CameraWalls(currentTime, relativeWalls);
+
+            int duckieX = 0;
+            double realDuckieX = (duckieX + 0.5) * GRID_SIZE;
+            int duckieY = 2;
+            double realDuckieY = (duckieY + 0.5) * GRID_SIZE;
+            double dx = realDuckieX - cameraPose.x();
+            double dy = realDuckieY - cameraPose.y();
+            var relativeAngle = atan2(dy, dx) / (2 * PI) - cameraPose.angle();
+            if (relativeAngle < -0.5) relativeAngle += 1;
+            double relativeDistance = sqrt(dx * dx + dy * dy);
+
+            if (abs(relativeAngle) < 0.1 && relativeDistance < 0.7) {
+                boolean isDuckieVisible = true;
+                for (var wall : visibleWalls) {
+                    if ((abs(dx) > abs(dy)) == (wall.axis() == GridWall.Axis.Y)) {
+                        var relativeWall = RelativeWall.fromGrid(wall, cameraPose);
+                        if (relativeWall.distance() < relativeDistance) {
+                            isDuckieVisible = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (isDuckieVisible) {
+                    trackedState.duckie = new DuckieState.DuckiePosition(System.nanoTime(), new RelativeWall(
+                            relativeDistance, relativeAngle
+                    ));
+                }
+            }
         }
     }
 }

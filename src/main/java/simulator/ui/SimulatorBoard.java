@@ -6,6 +6,7 @@ import controller.estimation.DuckieEstimations;
 import planner.GridWall;
 import simulator.WallGrid;
 import state.DuckiePose;
+import state.DuckieState;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,8 +16,7 @@ import java.util.Queue;
 
 import static controller.desired.DesiredPose.*;
 import static controller.util.DuckieBot.*;
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
+import static java.lang.Math.*;
 import static planner.RoutePlanner.simpleCos;
 import static planner.RoutePlanner.simpleSin;
 
@@ -29,10 +29,11 @@ public class SimulatorBoard extends JPanel {
     private final Queue<DesiredPose> route;
     private final WallGrid realWalls;
     private final DuckiePose realPose;
+    private final DuckieState trackedState;
 
     public SimulatorBoard(
             DuckieEstimations estimations, DesiredVelocity desiredVelocity, Queue<DesiredPose> route,
-            WallGrid realWalls, DuckiePose realPose
+            WallGrid realWalls, DuckiePose realPose, DuckieState trackedState
     ) {
         this.estimations = estimations;
         this.desiredVelocity = desiredVelocity;
@@ -40,6 +41,7 @@ public class SimulatorBoard extends JPanel {
         this.route = route;
         this.realWalls = realWalls;
         this.realPose = realPose;
+        this.trackedState = trackedState;
     }
 
     private final java.util.List<Point2D.Double> estimatedVisitedPoints = new ArrayList<>();
@@ -80,7 +82,7 @@ public class SimulatorBoard extends JPanel {
         synchronized (estimations) {
             double x = estimations.x;
             double y = estimations.y;
-            double angle = estimations.angle * 2 * Math.PI;
+            double angle = estimations.angle * 2 * PI;
 
             double cosAngle = cos(angle);
             double sinAngle = sin(angle);
@@ -118,9 +120,39 @@ public class SimulatorBoard extends JPanel {
             graphics.drawLine(
                     transformRealX(estimations.x),
                     transformRealY(estimations.y),
-                    transformRealX(estimations.x + 0.1 * cos(desiredVelocity.angle * 2.0 * Math.PI)),
-                    transformRealY(estimations.y + 0.1 * sin(desiredVelocity.angle * 2.0 * Math.PI))
+                    transformRealX(estimations.x + 0.1 * cos(desiredVelocity.angle * 2.0 * PI)),
+                    transformRealY(estimations.y + 0.1 * sin(desiredVelocity.angle * 2.0 * PI))
             );
+
+            var duckie = estimations.duckie;
+            if (duckie != null) {
+                int duckieRadius = 10;
+                double duckieX = (duckie.gridX() + 0.5) * GRID_SIZE;
+                double duckieY = (duckie.gridY() + 0.5) * GRID_SIZE;
+                graphics.fillOval(
+                        transformRealX(duckieX) - duckieRadius,
+                        transformRealY(duckieY) - duckieRadius,
+                        2 * duckieRadius,
+                        2 * duckieRadius
+                );
+            }
+
+            graphics.setColor(Color.MAGENTA);
+            var cameraWalls = trackedState.cameraWalls;
+            if (cameraWalls != null) {
+                for (var wall : cameraWalls.walls()) {
+                    double cameraAngleRad = estimations.angle * 2 * PI;
+                    double wallAngleRad = (estimations.angle + wall.angle()) * 2 * PI;
+                    double wallX = estimations.x + CAMERA_OFFSET * cos(cameraAngleRad) + wall.distance() * cos(wallAngleRad);
+                    double wallY = estimations.y + CAMERA_OFFSET * sin(cameraAngleRad) + wall.distance() * sin(wallAngleRad);
+                    int wallRadius = 7;
+                    graphics.fillOval(
+                            transformRealX(wallX) - wallRadius,
+                            transformRealY(wallY) - wallRadius,
+                            2 * wallRadius, 2 * wallRadius
+                    );
+                }
+            }
         }
 
         int radius = 1;

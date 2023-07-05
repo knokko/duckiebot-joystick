@@ -1,6 +1,7 @@
 package controller.estimation;
 
 import controller.util.Polynomial;
+import planner.GridWall;
 import simulator.WallGrid;
 
 import static controller.util.DuckieBot.GRID_SIZE;
@@ -26,4 +27,6 @@ public class DuckieEstimations {
     public volatile Polynomial distancePolynomial;
 
     public final WallGrid walls = new WallGrid();
+
+    public volatile GridWall duckie;
 }

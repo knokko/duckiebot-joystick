@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static controller.util.DuckieBot.GRID_SIZE;
 import static java.lang.Math.*;
 
 public class WallSnapper {
@@ -48,7 +49,8 @@ public class WallSnapper {
 
     public SnapResult snap(
             double maxAngleCorrection, int numAnglesToTry,
-            double maxOffsetCorrection, int numOffsetsToTry
+            double maxOffsetCorrection, int numOffsetsToTry,
+            RelativeWall duckie
     ) {
         double minError = Double.MAX_VALUE;
         double bestAngleCorrection = 0;
@@ -88,7 +90,21 @@ public class WallSnapper {
             return transformedWall.snap().wall();
         }).collect(Collectors.toList());
 
-        return new SnapResult(walls, new FixedPose(
+        GridWall snappedDuckie = null;
+        if (duckie != null) {
+            var transformedDuckie = transformWall(
+                    duckie, estimatedPose.x + finalCorrectionX,
+                    estimatedPose.y + finalCorrectionY,
+                    estimatedPose.angle + finalAngleCorrection
+            );
+            snappedDuckie = new GridWall(
+                    (int) Math.floor(transformedDuckie.x() / GRID_SIZE),
+                    (int) Math.floor(transformedDuckie.y() / GRID_SIZE),
+                    GridWall.Axis.DUCKIE
+            );
+        }
+
+        return new SnapResult(walls, snappedDuckie, new FixedPose(
                 estimatedPose.x + bestCorrectionX,
                 estimatedPose.y + bestCorrectionY,
                 estimatedPose.angle + bestAngleCorrection
@@ -97,5 +113,5 @@ public class WallSnapper {
 
     public record FixedPose(double x, double y, double angle) {}
 
-    public record SnapResult(Collection<GridWall> walls, FixedPose correctedPose, double error) {}
+    public record SnapResult(Collection<GridWall> walls, GridWall duckie, FixedPose correctedPose, double error) {}
 }

@@ -1,5 +1,7 @@
 package joystick.client;
 
+import camera.CameraWalls;
+import camera.RelativeWall;
 import state.DuckieState;
 
 import java.io.DataInputStream;
@@ -7,6 +9,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 
@@ -49,6 +52,17 @@ public class JoystickClientConnection {
                         else if (type == 2) leftMotorConsumer.accept(input.readFloat());
                         else if (type == 3) duckieState.rightWheelEncoder = new DuckieState.WheelEncoderEntry(input.readLong(), input.readInt());
                         else if (type == 4) rightMotorConsumer.accept(input.readFloat());
+                        else if (type == 5) {
+                            int numWalls = input.readInt();
+                            var walls = new ArrayList<RelativeWall>(numWalls);
+                            for (int counter = 0; counter < numWalls; counter++) {
+                                walls.add(new RelativeWall(input.readFloat(), 1f - input.readFloat()));
+                            }
+                            duckieState.cameraWalls = new CameraWalls(System.nanoTime(), walls);
+                        } else if (type == 6) duckieState.duckie = new DuckieState.DuckiePosition(
+                                System.nanoTime(),
+                                new RelativeWall(input.readFloat(), input.readFloat())
+                        );
                         else duckieState.tof = input.readFloat();
                         didSomething = true;
                     }
