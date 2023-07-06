@@ -8,6 +8,7 @@ import controller.updater.ControllerFunction;
 
 import java.util.LinkedList;
 
+import static java.lang.Double.isNaN;
 import static java.lang.Math.abs;
 
 public class DirectSpeedPIDController implements ControllerFunction {
@@ -46,7 +47,9 @@ public class DirectSpeedPIDController implements ControllerFunction {
         // Setpoint ramping
         double speed = (estimations.leftSpeed + estimations.rightSpeed)/2;
 
-        if(abs(desiredVelocity.speed) < 0.01 && abs(speed) < 0.05){
+        double desiredSpeed = desiredVelocity.speed;
+
+        if(isNaN(desiredSpeed) || (abs(desiredSpeed) < 0.01 && abs(speed) < 0.05)) {
             desiredWheelSpeed.rightSpeed = 0;
             desiredWheelSpeed.leftSpeed = 0;
             errorList.clear();
@@ -54,15 +57,15 @@ public class DirectSpeedPIDController implements ControllerFunction {
             return;
         }
 
-        if (desiredVelocity.speed != 0 && abs(speed) > 0.1 && Math.signum(desiredVelocity.speed) != Math.signum(speed)) {
+        if (desiredSpeed != 0 && abs(speed) > 0.1 && Math.signum(desiredSpeed) != Math.signum(speed)) {
             errorList.clear();
             setPoint = 0.0;
         }
 
         //setPoint +=                sign                      *                      magnitude
-        setPoint += Math.signum(desiredVelocity.speed - speed) * Math.min(abs((desiredVelocity.speed - speed)), rampingSpeed * deltaTime);
+        setPoint += Math.signum(desiredSpeed - speed) * Math.min(abs((desiredSpeed - speed)), rampingSpeed * deltaTime);
         //double errorSpeed = setPoint - speed;
-        double errorSpeed = desiredVelocity.speed - speed;
+        double errorSpeed = desiredSpeed - speed;
 
         // Window the error list
         if(errorList.size() > 10000){
@@ -107,7 +110,7 @@ public class DirectSpeedPIDController implements ControllerFunction {
         speedInput += correctionP*deltaTime + correctionI + correctionD*deltaTime*deltaTime;
 
         // TODO Ensure that this stays in range [-maxSpeed, maxSpeed]
-        if(Math.signum(speedInput) != Math.signum(desiredVelocity.speed)){
+        if(Math.signum(speedInput) != Math.signum(desiredSpeed)){
             speedInput = 0;
         }
         desiredWheelSpeed.leftSpeed = speedInput;

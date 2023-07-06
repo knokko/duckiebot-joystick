@@ -9,6 +9,8 @@ import controller.util.BezierCurve;
 import java.util.Queue;
 
 import static controller.desired.DesiredPose.*;
+import static java.lang.Double.NaN;
+import static java.lang.Double.isNaN;
 import static java.lang.Math.*;
 
 public class BezierController implements ControllerFunction {
@@ -49,6 +51,17 @@ public class BezierController implements ControllerFunction {
         if (destinationPose == null) {
             desiredVelocity.speed = 0.0;
             desiredVelocity.angle = estimations.angle;
+            return;
+        }
+
+        if (isNaN(destinationPose.x)) {
+            desiredVelocity.speed = NaN;
+            desiredVelocity.angle = destinationPose.angle;
+
+            double difference = desiredVelocity.angle - estimations.angle;
+            if (difference < -0.5) difference += 1;
+            if (difference > 0.5) difference -= 1;
+            if (abs(difference) < 0.01) route.remove();
             return;
         }
 

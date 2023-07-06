@@ -8,6 +8,7 @@ import java.util.concurrent.BlockingQueue;
 import static controller.desired.DesiredPose.STATUS_CANCELLED;
 import static controller.desired.DesiredPose.STATUS_UNREAD;
 import static controller.util.DuckieBot.GRID_SIZE;
+import static java.lang.Double.NaN;
 
 public class RoutePlanner {
 
@@ -84,19 +85,8 @@ public class RoutePlanner {
             }
 
             if (!currentPose.status.compareAndSet(STATUS_UNREAD, STATUS_CANCELLED)) {
-                // If this code is reached, it's too late to turn, so the duckiebot should drive back first
-                double backX = centerX(previousGridPose);
-                double backY = centerY(previousGridPose);
-
-                if (currentPose.backward) {
-                    backX += 0.15 * GRID_SIZE * simpleCos(currentGridPose.angle);
-                    backY += 0.15 * GRID_SIZE * simpleSin(currentGridPose.angle);
-                } else {
-                    backX += 0.3 * GRID_SIZE * simpleCos(currentGridPose.angle);
-                    backY += 0.3 * GRID_SIZE * simpleSin(currentGridPose.angle);
-                }
-
-                lowLevelRoute.add(new DesiredPose(backX, backY, currentPose.angle, !currentPose.backward));
+                System.out.println("cry");
+                lowLevelRoute.add(new DesiredPose(NaN, NaN, desiredAngle, false));
             }
 
             double frontX = centerX(previousGridPose);

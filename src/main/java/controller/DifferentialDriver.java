@@ -11,6 +11,7 @@ import controller.updater.ControllerFunction;
 
 import java.util.LinkedList;
 
+import static java.lang.Double.isNaN;
 import static java.lang.Math.abs;
 import static java.lang.Math.signum;
 
@@ -56,14 +57,15 @@ public class DifferentialDriver implements ControllerFunction {
         double errorI = 0;
         double errorD = 0;
 
-        double rawAngleToGoal = desiredVelocity.angle - estimations.angle;
-        double angleToGoal = smartAngle(rawAngleToGoal);
+        double desiredAngle = desiredVelocity.angle;
+        double estimatedAngle = estimations.angle;
+        double rawAngleToGoal = desiredAngle - estimatedAngle;
 
         // Setpoint ramping
         //double rampingSpeed = 0.9 - 0.85 * (abs(estimations.leftSpeed) + abs(estimations.rightSpeed)) * 0.5;
         double rampingSpeed = 0.6;
 
-        setPoint += Math.signum(smartAngle(desiredVelocity.angle - setPoint)) * Math.min(abs(smartAngle(desiredVelocity.angle - setPoint)), rampingSpeed * deltaTime);
+        setPoint += Math.signum(smartAngle(desiredAngle - setPoint)) * Math.min(abs(smartAngle(desiredAngle - setPoint)), rampingSpeed * deltaTime);
         if (setPoint < 0) setPoint += 1;
         if (setPoint > 1) setPoint -= 1;
 
@@ -73,7 +75,7 @@ public class DifferentialDriver implements ControllerFunction {
         }
 
         // Calculate PID
-        var error = smartAngle(setPoint - estimations.angle);
+        var error = smartAngle(setPoint - estimatedAngle);
 
         // Calculate Last error
         double lastError = 0;
@@ -116,7 +118,12 @@ public class DifferentialDriver implements ControllerFunction {
         // Calculate desired wheel speeds
         double finalLeftSpeed = desiredWheelSpeed.leftSpeed;
         double finalRightSpeed = desiredWheelSpeed.rightSpeed;
-        if(finalLeftSpeed != 0 && finalRightSpeed != 0){
+        if (isNaN(desiredVelocity.speed)) {
+            double slope = 0.2;
+            finalLeftSpeed = slope * -angleCorrection;
+            finalRightSpeed = slope * angleCorrection;
+            System.out.println("finalLeftSpeed is " + finalLeftSpeed);
+        } else if (finalLeftSpeed != 0 && finalRightSpeed != 0){
             finalLeftSpeed *= (1 - signum(finalLeftSpeed) * angleCorrection);
             finalRightSpeed *= (1 + signum(finalRightSpeed) * angleCorrection);
         } else errorList.clear();
