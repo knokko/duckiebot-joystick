@@ -1,5 +1,6 @@
 package simulator.ui;
 
+import camera.WallMapper;
 import controller.*;
 import controller.desired.DesiredPose;
 import controller.desired.DesiredVelocity;
@@ -141,7 +142,7 @@ public class SimulatorUI {
         //updater.addController(averageSpeedEstimator, 1);
 
         var wallUpdater = new ControllerUpdater();
-        //wallUpdater.addController(new WallMapper(estimations, trackedState, 0.02, 0.1), 1);
+        wallUpdater.addController(new WallMapper(estimations, trackedState, 0.02, 0.0), 1);
 
         var monitorFrame = new JFrame();
         monitorFrame.setSize(800, 500);
