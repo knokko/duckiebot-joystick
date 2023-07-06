@@ -160,7 +160,7 @@ public class SimulatorUI {
         simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, lowLevelRoute, realWalls, realPose, trackedState));
         //simulatorFrame.addKeyListener(routeController);
         if (useManualRouteControl) {
-            simulatorFrame.addKeyListener(new KeyboardPlanner(highLevelRoute));
+            simulatorFrame.addKeyListener(new KeyboardPlanner(highLevelRoute, lowLevelRoute));
         }
         simulatorFrame.setVisible(true);
 
