@@ -26,6 +26,7 @@ public class MonitorBoard extends JPanel {
             DesiredVelocity desiredVelocity, PIDParameters pid
     ) {
         this.estimations = estimations;
+        graphSequences.add(new GraphSequence("Time of Flight", new Color(200, 50, 250), () -> trackedState.tof));
         graphSequences.add(new GraphSequence("Left control input", new Color(200, 150, 0), () -> controls.velLeft));
         graphSequences.add(new GraphSequence("Right control input", new Color(250, 190, 20), () -> controls.velRight));
         graphSequences.add(new GraphSequence("Left speed", new Color(0, 50, 180), () -> estimations.leftSpeed));
