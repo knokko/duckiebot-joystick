@@ -121,7 +121,9 @@ public class DifferentialDriver implements ControllerFunction {
             finalRightSpeed *= (1 + signum(finalRightSpeed) * angleCorrection);
         } else errorList.clear();
 
-        controls.velLeft = finalLeftSpeed;
-        controls.velRight = finalRightSpeed;
+        if(controls.override == false){
+            controls.velLeft = finalLeftSpeed;
+            controls.velRight = finalRightSpeed;
+        }
     }
 }

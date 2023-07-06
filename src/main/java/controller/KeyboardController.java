@@ -25,7 +25,7 @@ public class KeyboardController implements ControllerFunction, KeyListener {
     {
         this.desiredVelocity = desiredVelocity;
         this.estimations = estimations;
-        keyboardPose.speed = speed;
+        keyboardPose.speed = 0;
     }
     
 
@@ -75,6 +75,9 @@ public class KeyboardController implements ControllerFunction, KeyListener {
             case KeyEvent.VK_E:
                 angleOfsset += adjustmentAngle;
                 keyboardPose.angle += adjustmentAngle;
+                break;
+            case KeyEvent.VK_R:
+                desiredVelocity.needReposition = true;
                 break;
             case KeyEvent.VK_Q:
                 angleOfsset -= adjustmentAngle;

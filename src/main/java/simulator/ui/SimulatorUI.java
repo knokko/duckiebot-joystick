@@ -103,9 +103,9 @@ public class SimulatorUI {
 
         var poseEstimator = new PoseEstimator(trackedState, estimations);
 
-        var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
+        //var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
         //var routeController = new StepController(lowLevelRoute, desiredVelocity, estimations, controls, 5.0);
-        //var routeController = new KeyboardController(desiredVelocity, estimations, controls);
+        var routeController = new KeyboardController(desiredVelocity, estimations, controls);
         var differentialDriver = new DifferentialDriver(
                 desiredVelocity, desiredWheelSpeed, estimations, controls, parameters.anglePID
         );
@@ -144,6 +144,9 @@ public class SimulatorUI {
         var wallUpdater = new ControllerUpdater();
         wallUpdater.addController(new WallMapper(estimations, trackedState, 0.02, 0.0), 1);
 
+        var positioner = new ControllerUpdater();
+        positioner.addController(new Positionator(desiredVelocity, trackedState, estimations, controls), 10);
+
         var monitorFrame = new JFrame();
         monitorFrame.setSize(800, 500);
         monitorFrame.setAutoRequestFocus(false);
@@ -158,7 +161,7 @@ public class SimulatorUI {
         simulatorFrame.setSize(1200, 800);
         simulatorFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, lowLevelRoute, realWalls, realPose, trackedState));
-        //simulatorFrame.addKeyListener(routeController);
+        simulatorFrame.addKeyListener(routeController);
         if (useManualRouteControl) {
             simulatorFrame.addKeyListener(new KeyboardPlanner(highLevelRoute, lowLevelRoute));
         }
@@ -171,6 +174,10 @@ public class SimulatorUI {
         Thread wallThread = new Thread(wallUpdater::start);
         wallThread.setDaemon(true);
         wallThread.start();
+
+        Thread positionerThread = new Thread(positioner::start);
+        positionerThread.setDaemon(true);
+        positionerThread.start();
 
         Thread poseThread = new Thread(() -> {
             while (true) {

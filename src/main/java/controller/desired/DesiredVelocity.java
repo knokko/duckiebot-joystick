@@ -13,4 +13,6 @@ public class DesiredVelocity {
     public volatile double angle;
 
     public volatile double turnTime = 1.0;
+
+    public boolean needReposition = false;
 }
