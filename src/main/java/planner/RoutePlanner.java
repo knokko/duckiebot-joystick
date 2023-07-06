@@ -87,19 +87,19 @@ public class RoutePlanner {
             if (!currentPose.status.compareAndSet(STATUS_UNREAD, STATUS_CANCELLED)) {
                 System.out.println("cry");
                 lowLevelRoute.add(new DesiredPose(NaN, NaN, desiredAngle, false));
-            }
-
-            double frontX = centerX(previousGridPose);
-            double frontY = centerY(previousGridPose);
-            if (currentPose.backward) {
-                frontX -= 0.5 * GRID_SIZE * simpleCos(currentGridPose.angle);
-                frontY -= 0.5 * GRID_SIZE * simpleSin(currentGridPose.angle);
             } else {
-                frontX += 0.5 * GRID_SIZE * simpleCos(currentGridPose.angle);
-                frontY += 0.5 * GRID_SIZE * simpleSin(currentGridPose.angle);
-            }
+                double frontX = centerX(previousGridPose);
+                double frontY = centerY(previousGridPose);
+                if (currentPose.backward) {
+                    frontX -= 0.5 * GRID_SIZE * simpleCos(currentGridPose.angle);
+                    frontY -= 0.5 * GRID_SIZE * simpleSin(currentGridPose.angle);
+                } else {
+                    frontX += 0.5 * GRID_SIZE * simpleCos(currentGridPose.angle);
+                    frontY += 0.5 * GRID_SIZE * simpleSin(currentGridPose.angle);
+                }
 
-            lowLevelRoute.add(new DesiredPose(frontX, frontY, currentPose.angle, currentPose.backward));
+                lowLevelRoute.add(new DesiredPose(frontX, frontY, currentPose.angle, currentPose.backward));
+            }
 
             double finalAngle = desiredAngle;
             if (currentPose.backward) {

@@ -63,7 +63,7 @@ public class DifferentialDriver implements ControllerFunction {
 
         // Setpoint ramping
         //double rampingSpeed = 0.9 - 0.85 * (abs(estimations.leftSpeed) + abs(estimations.rightSpeed)) * 0.5;
-        double rampingSpeed = 0.6;
+        double rampingSpeed = 0.2;
 
         setPoint += Math.signum(smartAngle(desiredAngle - setPoint)) * Math.min(abs(smartAngle(desiredAngle - setPoint)), rampingSpeed * deltaTime);
         if (setPoint < 0) setPoint += 1;
@@ -122,10 +122,11 @@ public class DifferentialDriver implements ControllerFunction {
             double slope = 0.2;
             finalLeftSpeed = slope * -angleCorrection;
             finalRightSpeed = slope * angleCorrection;
-            System.out.println("finalLeftSpeed is " + finalLeftSpeed);
         } else if (finalLeftSpeed != 0 && finalRightSpeed != 0){
-            finalLeftSpeed *= (1 - signum(finalLeftSpeed) * angleCorrection);
-            finalRightSpeed *= (1 + signum(finalRightSpeed) * angleCorrection);
+            //finalLeftSpeed *= (1 - signum(finalLeftSpeed) * angleCorrection);
+            //finalRightSpeed *= (1 + signum(finalRightSpeed) * angleCorrection);
+            finalLeftSpeed -= signum(finalLeftSpeed) * angleCorrection;
+            finalRightSpeed += signum(finalRightSpeed) * angleCorrection;
         } else errorList.clear();
 
         if(controls.override == false){
