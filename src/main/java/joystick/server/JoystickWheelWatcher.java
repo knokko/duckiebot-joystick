@@ -18,7 +18,7 @@ import static java.lang.Math.PI;
 
 public class JoystickWheelWatcher {
 
-    private static final Pattern TICKS_PATTERN = Pattern.compile("secs:\\s*(\\d+)\\n.*nsecs:\\s*(\\d*)\\n.*\\ndata:\\s(\\d+)");
+    private static final Pattern TICKS_PATTERN = Pattern.compile("secs:\\s*(\\d+)\\n.*nsecs:\\s*(\\d*)\\n.*\\ndata:\\s(-?\\d+)");
 
     private final BiConsumer<Long, Integer> leftEncoderConsumer, rightEncoderConsumer;
     private final DoubleConsumer leftMotorConsumer, rightMotorConsumer;
