@@ -20,8 +20,8 @@ public class Positionator implements ControllerFunction{
     private final DuckieControls controls;
     private final DuckieState trackedState;
 
-    private double bootStrapSpeed = 0.05;
-    private double turnSpeed = 0.015;
+    private double bootStrapSpeed = 0.04;
+    private double turnSpeed = 0.03;
     private double moveSpeed = 0.05;
     private double currentDeviation = 0;
     private double lastDeviation = 0;
@@ -176,7 +176,7 @@ public class Positionator implements ControllerFunction{
 
         // Relase to controls
         System.out.println("Releasing controls");
-        //controls.override = false;
+        controls.override = false;
     }
 
     @Override

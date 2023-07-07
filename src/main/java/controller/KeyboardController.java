@@ -1,6 +1,5 @@
 package controller;
 
-import controller.desired.DesiredPose;
 import controller.desired.DesiredVelocity;
 import controller.estimation.DuckieEstimations;
 import controller.updater.ControllerFunction;
