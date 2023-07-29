@@ -1,6 +1,5 @@
 package controller;
 
-import controller.desired.DesiredPose;
 import controller.desired.DesiredVelocity;
 import controller.estimation.DuckieEstimations;
 import controller.updater.ControllerFunction;
@@ -51,18 +50,22 @@ public class KeyboardController implements ControllerFunction, KeyListener {
     @Override
     public void keyPressed(KeyEvent e) {
         switch (e.getKeyCode()) {
+            case KeyEvent.VK_UP:
             case KeyEvent.VK_W:
                  keyboardPose.angle = angleOfsset + 0.25;
                  keyboardPose.speed = speed;
-            break;
+                 break;
+            case KeyEvent.VK_LEFT:
             case KeyEvent.VK_A:
                  keyboardPose.angle = angleOfsset + 0.5;
                  keyboardPose.speed = speed;
-              break;
+                 break;
+            case KeyEvent.VK_DOWN:
             case KeyEvent.VK_S:
                  keyboardPose.angle = angleOfsset + 0.75;
                  keyboardPose.speed = speed;
-                break;
+                 break;
+            case KeyEvent.VK_RIGHT:
             case KeyEvent.VK_D:
                  keyboardPose.angle = angleOfsset + 0.0;
                  keyboardPose.speed = speed;

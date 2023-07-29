@@ -24,16 +24,28 @@ import state.DuckieState;
 
 import javax.swing.*;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static controller.util.DuckieBot.GRID_SIZE;
 import static java.lang.Thread.sleep;
 
 public class SimulatorUI {
 
+    enum Mode {
+        KEY_PLANNER,
+        KEY_CONTROLLER,
+        STEP_CONTROLLER,
+        AUTOMATIC_PLANNER
+    }
+
     public static void main(String[] args) {
-        boolean useDuckiebot = args.length > 0 && args[0].contains("duckie");
-        boolean useManualRouteControl = args.length > 0 && args[0].contains("manual");
+        boolean useDuckiebot = Arrays.stream(args).anyMatch(arg -> arg.contains("duckie"));
+        Mode mode = Mode.KEY_PLANNER;
+        if (Arrays.stream(args).anyMatch(arg -> arg.contains("key-controller"))) mode = Mode.KEY_CONTROLLER;
+        if (Arrays.stream(args).anyMatch(arg -> arg.contains("step-controller"))) mode = Mode.STEP_CONTROLLER;
+        if (Arrays.stream(args).anyMatch(arg -> arg.contains("automatic-planner"))) mode = Mode.AUTOMATIC_PLANNER;
 
         DuckieEstimations estimations;
         DuckieControls controls;
@@ -69,43 +81,30 @@ public class SimulatorUI {
             realPose = simulator.realPose;
         }
 
-        //var lowLevelRoute = new ConcurrentLinkedQueue<DesiredPose>();
         var lowLevelRoute = new LinkedList<DesiredPose>();
         var highLevelRoute = new LinkedBlockingQueue<GridPosition>();
-        //lowLevelRoute.add(new DesiredPose(0.4, 0.5 * DuckieBot.GRID_SIZE, 0, false));
-//        lowLevelRoute.add(new DesiredPose(0.95, 5 * GRID_SIZE, 0.25, false));
-//        lowLevelRoute.add(new DesiredPose(0.5, 0.5, 0.25, false));
-//        lowLevelRoute.add(new DesiredPose(0.5, 0.9, 0.25, false));
-//
-//        lowLevelRoute.add(new DesiredPose(0.4, 0.1, 0, true));
-//        lowLevelRoute.add(new DesiredPose(-0.2, 0.1, 0, true));
-//        lowLevelRoute.add(new DesiredPose(-0.3, 0.2, 0.75, true));
-//        lowLevelRoute.add(new DesiredPose(-0.3, 0.4, 0.75, true));
-//        lowLevelRoute.add(new DesiredPose(0.7, 0.2, 0.25));
-//        lowLevelRoute.add(new DesiredPose(0.7, 0.4, 0.25));
-//        lowLevelRoute.add(new DesiredPose(0.7, 0.6, 0.25));
-//        lowLevelRoute.add(new DesiredPose(0.6, 0.7, 0.5));
-//        lowLevelRoute.add(new DesiredPose(0.4, 0.7, 0.5));
-//        lowLevelRoute.add(new DesiredPose(0.2, 0.7, 0.5));
-//        lowLevelRoute.add(new DesiredPose(0.1, 0.6, 0.75));
-//        lowLevelRoute.add(new DesiredPose(0.1, 0.4, 0.75));
-//        lowLevelRoute.add(new DesiredPose(0.1, 0.2, 0.75));
-//        lowLevelRoute.add(new DesiredPose(0.1, 0.0, 0.75));
-        
+
+        if (mode == Mode.STEP_CONTROLLER) {
+            lowLevelRoute.add(new DesiredPose(0.4, 0.5 * GRID_SIZE, 0, false));
+            lowLevelRoute.add(new DesiredPose(0.95, 5 * GRID_SIZE, 0.25, false));
+        }
+
         var desiredVelocity = new DesiredVelocity();
         var desiredWheelSpeed = new DesiredWheelSpeed();
 
         var routePlanner = new RoutePlanner(highLevelRoute, lowLevelRoute);
 
-        Thread routePlannerThread = new Thread(routePlanner::start);
-        routePlannerThread.setDaemon(true);
-        routePlannerThread.start();
+        if (mode == Mode.KEY_PLANNER) {
+            Thread routePlannerThread = new Thread(routePlanner::start);
+            routePlannerThread.setDaemon(true);
+            routePlannerThread.start();
+        }
 
         var poseEstimator = new PoseEstimator(trackedState, estimations);
 
-        var routeController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
-        //var routeController = new StepController(lowLevelRoute, desiredVelocity, estimations, controls, 5.0);
-        //var routeController = new KeyboardController(desiredVelocity, estimations, controls);
+        var bezierRouteController = new BezierController(lowLevelRoute, desiredVelocity, estimations);
+        var stepRouteController = new StepController(lowLevelRoute, desiredVelocity, estimations, controls, 5.0);
+        var keyboardRouteController = new KeyboardController(desiredVelocity, estimations, controls);
         var differentialDriver = new DifferentialDriver(
                 desiredVelocity, desiredWheelSpeed, estimations, controls, parameters.anglePID
         );
@@ -134,7 +133,9 @@ public class SimulatorUI {
         var updater = new ControllerUpdater();
 
         updater.addController(updateFunction, 1);
-        updater.addController(routeController, 1);
+        if (mode == Mode.KEY_PLANNER) updater.addController(bezierRouteController, 1);
+        if (mode == Mode.STEP_CONTROLLER) updater.addController(stepRouteController, 1);
+        if (mode == Mode.KEY_CONTROLLER) updater.addController(keyboardRouteController, 1);
         updater.addController(directSpeedController, 1);
         updater.addController(differentialDriver, 1);
         updater.addController(leftSpeedEstimator, 1);
@@ -158,8 +159,8 @@ public class SimulatorUI {
         simulatorFrame.setSize(1200, 800);
         simulatorFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         simulatorFrame.add(new SimulatorBoard(estimations, desiredVelocity, lowLevelRoute, realWalls, realPose, trackedState));
-        //simulatorFrame.addKeyListener(routeController);
-        if (useManualRouteControl) {
+        if (mode == Mode.KEY_CONTROLLER) simulatorFrame.addKeyListener(keyboardRouteController);
+        if (mode == Mode.KEY_PLANNER) {
             simulatorFrame.addKeyListener(new KeyboardPlanner(highLevelRoute, lowLevelRoute));
         }
         simulatorFrame.setVisible(true);

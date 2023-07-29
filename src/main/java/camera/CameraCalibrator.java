@@ -65,7 +65,7 @@ public class CameraCalibrator extends JPanel implements KeyListener, MouseListen
     public void paint(Graphics graphics) {
         super.paint(graphics);
 
-        graphics.drawImage(cameraImage, 0, 0, 640, 480, null);
+        boolean shouldRetry = !graphics.drawImage(cameraImage, 0, 0, 640, 480, null);
 
         graphics.setColor(Color.WHITE);
         graphics.fillRect(640, 0, 640, 480);
@@ -99,6 +99,10 @@ public class CameraCalibrator extends JPanel implements KeyListener, MouseListen
         }
 
         Toolkit.getDefaultToolkit().sync();
+        if (shouldRetry) {
+            System.out.println("retry");
+            this.repaint();
+        }
     }
 
     @Override
