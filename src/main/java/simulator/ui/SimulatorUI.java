@@ -96,7 +96,7 @@ public class SimulatorUI {
         var routePlanner = new RoutePlanner(highLevelRoute, lowLevelRoute);
         var mazePlanner = new MazePlanner(highLevelRoute, estimations);
 
-        if (mode == Mode.KEY_PLANNER) {
+        if (mode == Mode.KEY_PLANNER || mode == Mode.AUTOMATIC_PLANNER) {
             Thread routePlannerThread = new Thread(routePlanner::start);
             routePlannerThread.setDaemon(true);
             routePlannerThread.start();
@@ -135,7 +135,7 @@ public class SimulatorUI {
         var updater = new ControllerUpdater();
 
         updater.addController(updateFunction, 1);
-        if (mode == Mode.KEY_PLANNER) updater.addController(bezierRouteController, 1);
+        if (mode == Mode.KEY_PLANNER || mode == Mode.AUTOMATIC_PLANNER) updater.addController(bezierRouteController, 1);
         if (mode == Mode.STEP_CONTROLLER) updater.addController(stepRouteController, 1);
         if (mode == Mode.KEY_CONTROLLER) updater.addController(keyboardRouteController, 1);
         updater.addController(directSpeedController, 1);
@@ -143,7 +143,7 @@ public class SimulatorUI {
         updater.addController(leftSpeedEstimator, 1);
         updater.addController(rightSpeedEstimator, 1);
         //updater.addController(averageSpeedEstimator, 1);
-        updater.addController(mazePlanner, 10);
+        if (mode == Mode.AUTOMATIC_PLANNER) updater.addController(mazePlanner, 10);
 
         var wallUpdater = new ControllerUpdater();
         wallUpdater.addController(new WallMapper(estimations, trackedState, 0.02, 0.0), 1);

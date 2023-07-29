@@ -35,8 +35,9 @@ useful to test how the PID controller responds to rapid changes in desired angle
 ### StepController
 *StepController* can be chosen by including "step-controller" in the
 **program arguments**. The duckiebot will start driving after 2 seconds,
-and it will take a sharp turn after driving a hardcoded distance. We used this
-to test the PID controller. TODO Do we still need this?
+and it will take a sharp turn after driving a hardcoded distance. This is
+useful for quick PID tuning, although the *KeyController* is usually
+more convenient for this.
 
 ### AutomaticPlanner
 *AutomaticPlanner* can be chosen by including "automatic-planner" in the
